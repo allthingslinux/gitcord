@@ -1,2 +1,2 @@
--[ ] create hello world bot on discord side
--[ ] bot pulls from /servermap to apply channel configuration upon a `/gitcord pull` command
+- [ ] create hello world bot on discord side
+- [ ] bot pulls from /servermap to apply channel configuration upon a `/gitcord pull` command
