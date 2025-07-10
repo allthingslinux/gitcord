@@ -12,6 +12,12 @@ GitCord is a Discord bot that allows you to manage your Discord server's channel
 
 We have detailed plans and are actively working on bringing these features to life. Code is on the way! Check back soon for updates, or feel free to contribute to help accelerate development.
 
+## Getting Started
+
+To get started in using **GitCord**, you can either design your own server channel structure from scratch or fork the **[gitcord-template](https://github.com/evolvewithevan/gitcord)**. This template provides a sample structure that demonstrates how to define your server's categories and channels using organized JSON configuration files.
+
+Once it's ready, you'll have to link the **GitCord** bot to your own repository, finally, you will be able to discuss and organize your Discord server all in a transparent, team-friendly GitHub repository. To manually synchronize with your repository, you can run `/gitcord pull` on the server.
+
 
 ## Planned Features
 
