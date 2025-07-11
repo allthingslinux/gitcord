@@ -12,6 +12,14 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+async def setup_hook():
+    """Setup hook to register slash commands."""
+    print("Setting up slash commands...")
+    # This ensures the command tree is properly initialized
+    await bot.tree.sync()
+
+bot.setup_hook = setup_hook
+
 @bot.event
 async def on_ready():
     """Event triggered when the bot is ready and connected to Discord."""
