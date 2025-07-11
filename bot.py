@@ -59,7 +59,8 @@ async def on_ready():
 @bot.tree.command(name="slashping", description="Check bot latency (slash)")
 async def slashping(interaction: discord.Interaction):
     """Slash command to check bot latency."""
-    await interaction.response.send_message("Pong!")
+    latency = round(bot.latency * 1000)
+    await interaction.response.send_message(f'Pong! 🏓 Latency: {latency}ms')
 
 @bot.command(name='hello')
 async def hello(ctx):
