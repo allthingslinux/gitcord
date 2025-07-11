@@ -25,7 +25,8 @@ def create_embed(
     description: str,
     color: Union[int, discord.Color] = discord.Color.blue(),
     author: Optional[discord.Member] = None,
-    timestamp: Optional[datetime] = None
+    timestamp: Optional[datetime] = None,
+    footer: Optional[str] = None
 ) -> discord.Embed:
     """
     Create a formatted Discord embed.
@@ -36,6 +37,7 @@ def create_embed(
         color: Embed color
         author: Optional author member
         timestamp: Optional timestamp
+        footer: Optional footer text
         
     Returns:
         Formatted Discord embed
@@ -52,6 +54,9 @@ def create_embed(
             name=author.display_name,
             icon_url=author.display_avatar.url
         )
+    
+    if footer:
+        embed.set_footer(text=footer)
     
     return embed
 
