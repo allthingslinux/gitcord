@@ -18,7 +18,7 @@ We have detailed plans and are actively working on bringing these features to li
 - **Version-Controlled Configuration**: Store your Discord server configuration in a Git repository
 - **Automatic Sync**: Webhook-based synchronization when configuration changes are pushed to GitHub
 - **Manual Pull**: Use `/gitcord pull` command to manually sync configuration changes
-- **Category and Channel Management**: Organize your server structure through JSON configuration files
+- **Category and Channel Management**: Organize your server structure through YAML configuration files
 
 ## Project Status
 
@@ -35,12 +35,12 @@ This project is currently in development. See the [roadmap](./roadmap/) for curr
 ```
 servermap/
 ├── category1/
-│   ├── category.json
-│   ├── channel1.json
-│   └── channel2.json
+│   ├── category.yaml
+│   ├── channel1.yaml
+│   └── channel2.yaml
 ├── category2/
-│   ├── category.json
-│   └── channel3.json
+│   ├── category.yaml
+│   └── channel3.yaml
 └── ...
 ```
 
@@ -48,7 +48,7 @@ servermap/
 
 - **Discord Bot**: Built with Discord.py, handles slash commands and server management
 - **Webhook Server**: Flask-based server to receive GitHub webhook events
-- **Configuration Parser**: Processes JSON configuration files to apply Discord server changes
+- **Configuration Parser**: Processes yaml configuration files to apply Discord server changes
 
 ## Planned Features
 
@@ -56,8 +56,8 @@ servermap/
 - [ ] Create hello world bot on Discord side
 - [ ] Bot pulls from `/servermap/` to apply channel configuration upon a `/gitcord pull` command
   - Categories will be placed within subdirs of `/servermap/`
-  - Each category will be described via a `category.json` file
-  - Within a category's subdir, each channel will be described via a `channelname.json`
+  - Each category will be described via a `category.yaml` file
+  - Within a category's subdir, each channel will be described via a `channelname.yaml`
 
 ## Development
 
