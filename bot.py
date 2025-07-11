@@ -1,5 +1,6 @@
 import os
 import discord
+from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -22,6 +23,7 @@ async def on_ready():
 
     # Send "Bot has restarted successfully!" to the first available text channel in each guild
     for guild in bot.guilds:
+        print(f"Connected to guild: {guild.name} (ID: {guild.id})")
         for channel in guild.text_channels:
             if channel.permissions_for(guild.me).send_messages:
                 try:
@@ -30,13 +32,34 @@ async def on_ready():
                     print(f"Failed to send message to {channel.name} in {guild.name}: {e}")
                 break  # Only send to the first available channel
 
+    # Sync slash commands
+    try:
+        print("Syncing slash commands...")
+        # Sync to all guilds the bot is in
+        for guild in bot.guilds:
+            print(f"Syncing commands to guild: {guild.name}")
+            synced = await bot.tree.sync(guild=guild)
+            print(f"Synced {len(synced)} command(s) to {guild.name}")
+        
+        # Also sync globally (takes up to 1 hour to propagate)
+        synced_global = await bot.tree.sync()
+        print(f"Synced {len(synced_global)} command(s) globally")
+        
+    except Exception as e:
+        print(f"Failed to sync commands: {e}")
+
+@bot.tree.command(name="ping", description="Check bot latency")
+async def ping(interaction: discord.Interaction):
+    """Slash command to check bot latency."""
+    await interaction.response.send_message("Pong!")
+
 @bot.command(name='hello')
 async def hello(ctx):
     """Simple hello world command."""
     await ctx.send(f'Hello, {ctx.author.mention}! 👋 Welcome to GitCord!')
 
 @bot.command(name='ping')
-async def ping(ctx):
+async def ping_prefix(ctx):
     """Check bot latency."""
     latency = round(bot.latency * 1000)
     await ctx.send(f'Pong! 🏓 Latency: {latency}ms')
