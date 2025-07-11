@@ -20,12 +20,12 @@ async def on_ready():
     # Set bot status
     await bot.change_presence(activity=discord.Game(name="!hello"))
 
-    # Send "Hello World" to the first available text channel in each guild
+    # Send "Bot has restarted successfully!" to the first available text channel in each guild
     for guild in bot.guilds:
         for channel in guild.text_channels:
             if channel.permissions_for(guild.me).send_messages:
                 try:
-                    await channel.send("Hello World")
+                    await channel.send("Bot has restarted successfully!")
                 except Exception as e:
                     print(f"Failed to send message to {channel.name} in {guild.name}: {e}")
                 break  # Only send to the first available channel
