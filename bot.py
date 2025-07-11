@@ -48,8 +48,8 @@ async def on_ready():
     except Exception as e:
         print(f"Failed to sync commands: {e}")
 
-@bot.tree.command(name="ping", description="Check bot latency")
-async def ping(interaction: discord.Interaction):
+@bot.tree.command(name="slashping", description="Check bot latency (slash)")
+async def slashping(interaction: discord.Interaction):
     """Slash command to check bot latency."""
     await interaction.response.send_message("Pong!")
 
