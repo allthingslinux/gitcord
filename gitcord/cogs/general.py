@@ -250,11 +250,15 @@ class General(commands.Cog):
                 'nsfw': channel_config.get('nsfw', False)
             }
 
-            # Set channel type
+            # Set position if specified
+            if 'position' in channel_config:
+                channel_kwargs['position'] = channel_config['position']
+
+            # Create the channel based on type
             if channel_config['type'].lower() == 'text':
-                channel_type = discord.ChannelType.text
+                new_channel = await ctx.guild.create_text_channel(**channel_kwargs)
             elif channel_config['type'].lower() == 'voice':
-                channel_type = discord.ChannelType.voice
+                new_channel = await ctx.guild.create_voice_channel(**channel_kwargs)
             else:
                 embed = create_embed(
                     title="❌ Invalid Channel Type",
@@ -265,16 +269,6 @@ class General(commands.Cog):
                 await ctx.send(embed=embed)
                 return
 
-            # Set position if specified
-            if 'position' in channel_config:
-                channel_kwargs['position'] = channel_config['position']
-
-            # Create the channel based on type
-            if channel_type == discord.ChannelType.text:
-                new_channel = await ctx.guild.create_text_channel(**channel_kwargs)
-            else:  # voice channel
-                new_channel = await ctx.guild.create_voice_channel(**channel_kwargs)
-
             # Create success embed
             embed = create_embed(
                 title="✅ Channel Created",
@@ -283,9 +277,9 @@ class General(commands.Cog):
             )
 
             # Add fields manually
-            embed.add_field(name="Name", value=channel_config['name'], inline=True)
-            embed.add_field(name="Type", value=channel_config['type'], inline=True)
-            embed.add_field(name="NSFW", value=str(channel_config.get('nsfw', False)), inline=True)
+            embed.add_field(name="Name", value=channel_kwargs['name'], inline=True)
+            embed.add_field(name="Type", value=channel_kwargs['type'], inline=True)
+            embed.add_field(name="NSFW", value=channel_kwargs['nsfw'], inline=True)
             embed.add_field(name="Topic", value=channel_config.get('topic', 'No topic set'),
                             inline=False)
 
