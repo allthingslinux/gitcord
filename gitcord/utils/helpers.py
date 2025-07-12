@@ -21,6 +21,7 @@ def format_latency(latency: float) -> str:
     return f"{round(latency * 1000)}ms"
 
 
+# pylint: disable=too-many-arguments, too-many-positional-arguments
 def create_embed(
     title: str,
     description: str,

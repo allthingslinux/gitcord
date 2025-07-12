@@ -41,8 +41,10 @@ def create_env_file():
         print("✅ .env file created successfully!")
         print("You can now run the bot with: python main.py")
 
-    except Exception as e:
+    except OSError as e:
         print(f"Error creating .env file: {e}")
+    except Exception as e:  # pylint: disable=broad-except
+        print(f"Unexpected error: {e}")
 
 
 def main():

@@ -6,11 +6,11 @@ Handles Discord events like on_ready and command syncing.
 import discord
 from discord.ext import commands
 
-from .utils.logger import logger
+from .utils.logger import main_logger as logger
 from .config import config
 
 
-class EventHandler:
+class EventHandler:  # pylint: disable=too-few-public-methods
     """Handles Discord bot events."""
 
     def __init__(self, bot: commands.Bot):
@@ -43,7 +43,10 @@ class EventHandler:
                     try:
                         await channel.send("Bot has restarted successfully!")
                         logger.info("Sent restart message to %s in %s", channel.name, guild.name)
-                    except Exception as e:
+                    except discord.DiscordException as e:
+                        logger.error("Failed to send message to %s in %s: %s",
+                                   channel.name, guild.name, e)
+                    except Exception as e:  # pylint: disable=broad-except
                         logger.error("Failed to send message to %s in %s: %s",
                                    channel.name, guild.name, e)
                     break  # Only send to the first available channel
@@ -63,7 +66,9 @@ class EventHandler:
             synced_global = await self.bot.tree.sync()
             logger.info("Synced %d command(s) globally", len(synced_global))
 
-        except Exception as e:
+        except discord.DiscordException as e:
+            logger.error("Failed to sync commands: %s", e)
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("Failed to sync commands: %s", e)
 
 

@@ -9,7 +9,7 @@ from discord.ext import commands
 
 from .config import config
 from .events import setup_events
-from .utils.logger import logger
+from .utils.logger import main_logger as logger
 
 
 class GitCordBot(commands.Bot):
@@ -57,16 +57,17 @@ class GitCordBot(commands.Bot):
         except Exception as e:
             logger.error("Failed to load cogs: %s", e)
 
-    async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
+    async def on_command_error(self, context, error):
         """Global command error handler."""
         logger.error("Global command error: %s", error)
-
         if isinstance(error, commands.CommandNotFound):
-            await ctx.send("Command not found. Try `!hello` or `!ping`!")
+            await context.send("Command not found. Try `!hello` or `!ping`!")
         elif isinstance(error, commands.MissingPermissions):
-            await ctx.send("You don't have permission to use this command!")
+            await context.send("You don't have permission to use this command!")
+        elif isinstance(error, commands.CommandError):
+            await context.send(f"A command error occurred: {error}")
         else:
-            await ctx.send(f"An error occurred: {error}")
+            raise error
 
 
 async def main() -> None:

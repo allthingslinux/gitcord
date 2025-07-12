@@ -11,7 +11,7 @@ from discord import app_commands
 import requests
 from bs4 import BeautifulSoup
 
-from ..utils.logger import logger
+from ..utils.logger import main_logger as logger
 from ..utils.helpers import format_latency, create_embed
 
 
@@ -90,8 +90,10 @@ class General(commands.Cog):
                 color=discord.Color.red()
             )
             await ctx.send(embed=embed)
-
-        except Exception as e:
+        except discord.DiscordException as e:
+            logger.error("Discord error in fetchurl command: %s", e)
+            await ctx.send("A Discord error occurred.")
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("Error in fetchurl command: %s", e)
             embed = create_embed(
                 title="❌ Unexpected Error",
@@ -167,8 +169,10 @@ class General(commands.Cog):
                 color=discord.Color.red()
             )
             await interaction.followup.send(embed=embed)
-
-        except Exception as e:
+        except discord.DiscordException as e:
+            logger.error("Discord error in fetchurl command: %s", e)
+            await interaction.followup.send("A Discord error occurred.")
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("Error in fetchurl command: %s", e)
             embed = create_embed(
                 title="❌ Unexpected Error",
