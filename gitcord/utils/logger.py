@@ -9,17 +9,17 @@ from typing import Optional
 def setup_logger(name: str = "gitcord", level: int = logging.INFO) -> logging.Logger:
     """
     Set up a logger with proper formatting.
-    
+
     Args:
         name: Logger name
         level: Logging level
-        
+
     Returns:
         Configured logger instance
     """
     logger = logging.getLogger(name)
     logger.setLevel(level)
-    
+
     # Avoid adding handlers if they already exist
     if not logger.handlers:
         handler = logging.StreamHandler()
@@ -28,14 +28,14 @@ def setup_logger(name: str = "gitcord", level: int = logging.INFO) -> logging.Lo
         )
         handler.setFormatter(formatter)
         logger.addHandler(handler)
-    
+
     return logger
 
 
 def log_error(logger: logging.Logger, error: Exception, context: Optional[str] = None) -> None:
     """
     Log an error with context.
-    
+
     Args:
         logger: Logger instance
         error: Exception to log
@@ -48,4 +48,4 @@ def log_error(logger: logging.Logger, error: Exception, context: Optional[str] =
 
 
 # Default logger instance
-logger = setup_logger() 
+logger = setup_logger()

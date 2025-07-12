@@ -2,18 +2,19 @@
 Helper utilities for GitCord bot.
 """
 
-import discord
-from typing import Optional, Union
 from datetime import datetime
+from typing import Optional, Union
+
+import discord
 
 
 def format_latency(latency: float) -> str:
     """
     Format latency in milliseconds.
-    
+
     Args:
         latency: Latency in seconds
-        
+
     Returns:
         Formatted latency string
     """
@@ -30,7 +31,7 @@ def create_embed(
 ) -> discord.Embed:
     """
     Create a formatted Discord embed.
-    
+
     Args:
         title: Embed title
         description: Embed description
@@ -38,7 +39,7 @@ def create_embed(
         author: Optional author member
         timestamp: Optional timestamp
         footer: Optional footer text
-        
+
     Returns:
         Formatted Discord embed
     """
@@ -48,51 +49,50 @@ def create_embed(
         color=color,
         timestamp=timestamp or datetime.utcnow()
     )
-    
+
     if author:
         embed.set_author(
             name=author.display_name,
             icon_url=author.display_avatar.url
         )
-    
+
     if footer:
         embed.set_footer(text=footer)
-    
+
     return embed
 
 
 def truncate_text(text: str, max_length: int = 1024) -> str:
     """
     Truncate text to a maximum length.
-    
+
     Args:
         text: Text to truncate
         max_length: Maximum length
-        
+
     Returns:
         Truncated text
     """
     if len(text) <= max_length:
         return text
-    
+
     return text[:max_length-3] + "..."
 
 
 def format_time_delta(seconds: float) -> str:
     """
     Format time delta in a human-readable format.
-    
+
     Args:
         seconds: Time in seconds
-        
+
     Returns:
         Formatted time string
     """
     if seconds < 60:
         return f"{seconds:.1f}s"
-    elif seconds < 3600:
+    if seconds < 3600:
         minutes = seconds / 60
         return f"{minutes:.1f}m"
-    else:
-        hours = seconds / 3600
-        return f"{hours:.1f}h" 
+    hours = seconds / 3600
+    return f"{hours:.1f}h"
