@@ -4,6 +4,8 @@ Contains basic utility commands.
 """
 
 import re
+import yaml
+import os
 
 import discord
 from discord.ext import commands
@@ -213,6 +215,143 @@ class General(commands.Cog):
             color=discord.Color.green()
         )
         await ctx.send(embed=embed)
+
+    @commands.command(name='createchannel')
+    @commands.has_permissions(manage_channels=True)
+    async def createchannel(self, ctx: commands.Context) -> None:
+        """Create a channel based on properties defined in a YAML file."""
+        yaml_path = "/home/user/Projects/gitcord-template/community/off-topic.yaml"
+        
+        try:
+            # Check if the user has permission to manage channels
+            if not ctx.author.guild_permissions.manage_channels:
+                embed = create_embed(
+                    title="❌ Permission Denied",
+                    description="You need the 'Manage Channels' permission to use this command.",
+                    color=discord.Color.red()
+                )
+                await ctx.send(embed=embed)
+                return
+
+            # Check if YAML file exists
+            if not os.path.exists(yaml_path):
+                embed = create_embed(
+                    title="❌ File Not Found",
+                    description=f"YAML file not found at: {yaml_path}",
+                    color=discord.Color.red()
+                )
+                await ctx.send(embed=embed)
+                return
+
+            # Read and parse YAML file
+            with open(yaml_path, 'r', encoding='utf-8') as file:
+                channel_config = yaml.safe_load(file)
+
+            # Validate required fields
+            required_fields = ['name', 'type']
+            for field in required_fields:
+                if field not in channel_config:
+                    embed = create_embed(
+                        title="❌ Invalid YAML",
+                        description=f"Missing required field: {field}",
+                        color=discord.Color.red()
+                    )
+                    await ctx.send(embed=embed)
+                    return
+
+            # Prepare channel creation parameters
+            channel_kwargs = {
+                'name': channel_config['name'],
+                'topic': channel_config.get('topic', ''),
+                'nsfw': channel_config.get('nsfw', False)
+            }
+
+            # Set channel type
+            if channel_config['type'].lower() == 'text':
+                channel_type = discord.ChannelType.text
+            elif channel_config['type'].lower() == 'voice':
+                channel_type = discord.ChannelType.voice
+            else:
+                embed = create_embed(
+                    title="❌ Invalid Channel Type",
+                    description=f"Channel type '{channel_config['type']}' is not supported. Use 'text' or 'voice'.",
+                    color=discord.Color.red()
+                )
+                await ctx.send(embed=embed)
+                return
+
+            # Set position if specified
+            if 'position' in channel_config:
+                channel_kwargs['position'] = channel_config['position']
+
+            # Create the channel based on type
+            if channel_type == discord.ChannelType.text:
+                new_channel = await ctx.guild.create_text_channel(**channel_kwargs)
+            else:  # voice channel
+                new_channel = await ctx.guild.create_voice_channel(**channel_kwargs)
+
+            # Create success embed
+            embed = create_embed(
+                title="✅ Channel Created",
+                description=f"Successfully created channel: {new_channel.mention}",
+                color=discord.Color.green()
+            )
+            
+            # Add fields manually
+            embed.add_field(name="Name", value=channel_config['name'], inline=True)
+            embed.add_field(name="Type", value=channel_config['type'], inline=True)
+            embed.add_field(name="NSFW", value=str(channel_config.get('nsfw', False)), inline=True)
+            embed.add_field(name="Topic", value=channel_config.get('topic', 'No topic set'), inline=False)
+
+            await ctx.send(embed=embed)
+            logger.info("Channel '%s' created successfully by %s", channel_config['name'], ctx.author)
+
+        except yaml.YAMLError as e:
+            embed = create_embed(
+                title="❌ YAML Parse Error",
+                description=f"Failed to parse YAML file: {str(e)}",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+            logger.error("YAML parse error in createchannel command: %s", e)
+        except discord.Forbidden:
+            embed = create_embed(
+                title="❌ Permission Error",
+                description="I don't have permission to create channels in this server.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+            logger.error("Permission error in createchannel command")
+        except discord.HTTPException as e:
+            embed = create_embed(
+                title="❌ Discord Error",
+                description=f"Discord API error: {str(e)}",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+            logger.error("Discord HTTP error in createchannel command: %s", e)
+        except Exception as e:  # pylint: disable=broad-except
+            embed = create_embed(
+                title="❌ Unexpected Error",
+                description=f"An unexpected error occurred: {str(e)}",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+            logger.error("Unexpected error in createchannel command: %s", e)
+
+    @createchannel.error
+    async def createchannel_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
+        """Handle errors for the createchannel command."""
+        if isinstance(error, commands.MissingPermissions):
+            embed = create_embed(
+                title="❌ Permission Denied",
+                description="You need the 'Manage Channels' permission to use this command.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+        else:
+            logger.error("Error in createchannel command: %s", error)
+            await ctx.send(f"An error occurred: {error}")
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
