@@ -45,17 +45,13 @@ class GitCordBot(commands.Bot):
 
     async def _load_cogs(self) -> None:
         """Load all bot cogs."""
-        try:
-            # Load the general cog
-            await self.load_extension("gitcord.cogs.general")
-            logger.info("Loaded general cog")
+        # Load the general cog
+        await self.load_extension("gitcord.cogs.general")
+        logger.info("Loaded general cog")
 
-            # Add more cogs here as they are created
-            # await self.load_extension("gitcord.cogs.git")
-            # await self.load_extension("gitcord.cogs.admin")
-
-        except Exception as e:
-            logger.error("Failed to load cogs: %s", e)
+        # Add more cogs here as they are created
+        # await self.load_extension("gitcord.cogs.git")
+        # await self.load_extension("gitcord.cogs.admin")
 
     async def on_command_error(self, context, error):
         """Global command error handler."""
@@ -82,8 +78,6 @@ async def main() -> None:
         logger.error("Invalid Discord token! Please check your DISCORD_TOKEN in the .env file.")
     except ValueError as e:
         logger.error("Configuration error: %s", e)
-    except Exception as e:
-        logger.error("Error starting bot: %s", e)
 
 
 def run_bot() -> None:
