@@ -3,7 +3,6 @@ General commands cog for GitCord bot.
 Contains basic utility commands.
 """
 
-import os
 import re
 
 import discord
@@ -13,7 +12,7 @@ from bs4 import BeautifulSoup
 from discord import app_commands
 from discord.ext import commands
 
-from ..utils.helpers import format_latency, create_embed
+from ..utils.helpers import format_latency, create_embed, parse_channel_config
 from ..utils.logger import main_logger as logger
 
 
@@ -233,31 +232,16 @@ class General(commands.Cog):
                 await ctx.send(embed=embed)
                 return
 
-            # Check if YAML file exists
-            if not os.path.exists(yaml_path):
+            try:
+                channel_config = parse_channel_config(yaml_path)
+            except ValueError as e:
                 embed = create_embed(
-                    title="❌ File Not Found",
-                    description=f"YAML file not found at: {yaml_path}",
+                    title="❌ Invalid YAML",
+                    description=str(e),
                     color=discord.Color.red()
                 )
                 await ctx.send(embed=embed)
                 return
-
-            # Read and parse YAML file
-            with open(yaml_path, 'r', encoding='utf-8') as file:
-                channel_config = yaml.safe_load(file)
-
-            # Validate required fields
-            required_fields = ['name', 'type']
-            for field in required_fields:
-                if field not in channel_config:
-                    embed = create_embed(
-                        title="❌ Invalid YAML",
-                        description=f"Missing required field: {field}",
-                        color=discord.Color.red()
-                    )
-                    await ctx.send(embed=embed)
-                    return
 
             # Prepare channel creation parameters
             channel_kwargs = {
