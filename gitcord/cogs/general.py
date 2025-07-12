@@ -3,18 +3,18 @@ General commands cog for GitCord bot.
 Contains basic utility commands.
 """
 
-import re
-import yaml
 import os
+import re
 
 import discord
-from discord.ext import commands
-from discord import app_commands
 import requests
+import yaml
 from bs4 import BeautifulSoup
+from discord import app_commands
+from discord.ext import commands
 
-from ..utils.logger import main_logger as logger
 from ..utils.helpers import format_latency, create_embed
+from ..utils.logger import main_logger as logger
 
 
 class General(commands.Cog):
@@ -39,7 +39,7 @@ class General(commands.Cog):
             # Fetch the webpage
             headers = {
                 'User-Agent': ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                              '(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
+                               '(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
             }
             response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
@@ -118,7 +118,7 @@ class General(commands.Cog):
             # Fetch the webpage
             headers = {
                 'User-Agent': ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                              '(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
+                               '(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
             }
             response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
@@ -221,7 +221,7 @@ class General(commands.Cog):
     async def createchannel(self, ctx: commands.Context) -> None:
         """Create a channel based on properties defined in a YAML file."""
         yaml_path = "/home/user/Projects/gitcord-template/community/off-topic.yaml"
-        
+
         try:
             # Check if the user has permission to manage channels
             if not ctx.author.guild_permissions.manage_channels:
@@ -274,7 +274,8 @@ class General(commands.Cog):
             else:
                 embed = create_embed(
                     title="❌ Invalid Channel Type",
-                    description=f"Channel type '{channel_config['type']}' is not supported. Use 'text' or 'voice'.",
+                    description=f"Channel type '{channel_config['type']}' is not supported. "
+                                "Use 'text' or 'voice'.",
                     color=discord.Color.red()
                 )
                 await ctx.send(embed=embed)
@@ -296,15 +297,17 @@ class General(commands.Cog):
                 description=f"Successfully created channel: {new_channel.mention}",
                 color=discord.Color.green()
             )
-            
+
             # Add fields manually
             embed.add_field(name="Name", value=channel_config['name'], inline=True)
             embed.add_field(name="Type", value=channel_config['type'], inline=True)
             embed.add_field(name="NSFW", value=str(channel_config.get('nsfw', False)), inline=True)
-            embed.add_field(name="Topic", value=channel_config.get('topic', 'No topic set'), inline=False)
+            embed.add_field(name="Topic", value=channel_config.get('topic', 'No topic set'),
+                            inline=False)
 
             await ctx.send(embed=embed)
-            logger.info("Channel '%s' created successfully by %s", channel_config['name'], ctx.author)
+            logger.info("Channel '%s' created successfully by %s", channel_config['name'],
+                        ctx.author)
 
         except yaml.YAMLError as e:
             embed = create_embed(
@@ -340,7 +343,8 @@ class General(commands.Cog):
             logger.error("Unexpected error in createchannel command: %s", e)
 
     @createchannel.error
-    async def createchannel_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
+    async def createchannel_error(self, ctx: commands.Context,
+                                  error: commands.CommandError) -> None:
         """Handle errors for the createchannel command."""
         if isinstance(error, commands.MissingPermissions):
             embed = create_embed(
