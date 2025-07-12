@@ -53,7 +53,7 @@ class GitCordBot(commands.Bot):
         # await self.load_extension("gitcord.cogs.git")
         # await self.load_extension("gitcord.cogs.admin")
 
-    async def on_command_error(self, context, error):
+    async def on_command_error(self, context, error):  # pylint: disable=arguments-differ
         """Global command error handler."""
         logger.error("Global command error: %s", error)
         if isinstance(error, commands.CommandNotFound):
