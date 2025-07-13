@@ -26,7 +26,7 @@ python setup.py
 This will guide you through creating the `.env` file with your bot token.
 
 #### Option B: Manual Setup
-Create a `.env` file in the project root with:
+Clone the `.env.example` file in the project root and remove `.example` from the extension. Then populate relevant fields:
 ```
 DISCORD_TOKEN=your_discord_bot_token_here
 ```
