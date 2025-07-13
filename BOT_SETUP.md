@@ -52,7 +52,7 @@ If you don't have a Discord bot yet, follow these steps:
 2. Click "New Application" and give it a name
 3. Go to the "Bot" section in the left sidebar
 4. Click "Add Bot"
-5. Under the "Token" section, click "Copy" to copy your bot token
+5. Under the "Token" section, click "Copy" to copy your bot token. -  NOTE, You will only see this token once. 
 6. Save this token securely - you'll need it for the `.env` file
 
 ### Bot Permissions
