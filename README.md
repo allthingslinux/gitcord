@@ -15,7 +15,7 @@ We have detailed plans and are actively working on bringing these features to li
 
 ## Getting Started
 
-To get started in using **GitCord**, you can either design your own server channel structure from scratch or fork the **[gitcord-template](https://github.com/evolvewithevan/gitcord-template)**. This template provides a sample structure that demonstrates how to define your server's categories and channels using organized JSON configuration files.
+To get started in using **GitCord**, you can either design your own server channel structure from scratch or fork the **[gitcord-template](https://github.com/evolvewithevan/gitcord-template)**. This template provides a sample structure that demonstrates how to define your server's categories and channels using organized YAML configuration files.
 
 Once it's ready, you'll have to link the **GitCord** bot to your own repository, finally, you will be able to discuss and organize your Discord server all in a transparent, team-friendly GitHub repository. To manually synchronize with your repository, you can run `/gitcord pull` on the server.
 

@@ -35,8 +35,8 @@ def setup_logger(name: str = "gitcord", level: int = logging.INFO) -> logging.Lo
     return logger
 
 
-def log_error(log_instance: logging.Logger, error: Exception, context: Optional[str] = None) -> None:
-
+def log_error(log_instance: logging.Logger, error: Exception,
+              context: Optional[str] = None) -> None:
     """
     Log an error with context.
 
@@ -49,6 +49,7 @@ def log_error(log_instance: logging.Logger, error: Exception, context: Optional[
     if context:
         message = f"{context} - {message}"
     log_instance.error(message, exc_info=True)  # pylint: disable=line-too-long
+
 
 # Default logger instance
 main_logger = setup_logger()

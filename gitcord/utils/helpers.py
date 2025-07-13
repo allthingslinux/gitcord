@@ -1,11 +1,12 @@
 """
 Helper utilities for GitCord bot.
 """
-
+import os
 from datetime import datetime
 from typing import Optional, Union
 
 import discord
+import yaml
 
 
 def format_latency(latency: float) -> str:
@@ -97,3 +98,20 @@ def format_time_delta(seconds: float) -> str:
         return f"{minutes:.1f}m"
     hours = seconds / 3600
     return f"{hours:.1f}h"
+
+
+def parse_channel_config(yaml_path: str) -> dict:
+    """Parse and validate the YAML configuration file."""
+    if not os.path.exists(yaml_path):
+        raise ValueError(f"YAML file not found at: {yaml_path}")
+
+    with open(yaml_path, 'r', encoding='utf-8') as file:
+        channel_config = yaml.safe_load(file)
+
+    # Validate required fields
+    required_fields = ['name', 'type']
+    for field in required_fields:
+        if field not in channel_config:
+            raise ValueError(f"Missing required field: {field}")
+
+    return channel_config
