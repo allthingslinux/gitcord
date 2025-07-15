@@ -1,2 +1,0 @@
-pylint>=3.3.7
-setuptools>=80.9.0
