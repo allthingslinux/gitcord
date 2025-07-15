@@ -370,12 +370,6 @@ class General(commands.Cog):
             existing_category = discord.utils.get(interaction.guild.categories, name=category_config['name'])
             if existing_category:
                 # Category exists, check for differences and apply updates
-                embed = create_embed(
-                    title="🔄 Updating Existing Category",
-                    description=f"Category **{category_config['name']}** already exists. Checking for differences...",
-                    color=discord.Color.blue()
-                )
-                await interaction.followup.send(embed=embed)
                 
                 updated_channels = []
                 created_channels = []
@@ -832,12 +826,6 @@ class General(commands.Cog):
             existing_category = discord.utils.get(ctx.guild.categories, name=category_config['name'])
             if existing_category:
                 # Category exists, check for differences and apply updates
-                embed = create_embed(
-                    title="🔄 Updating Existing Category",
-                    description=f"Category **{category_config['name']}** already exists. Checking for differences...",
-                    color=discord.Color.blue()
-                )
-                await ctx.send(embed=embed)
                 
                 updated_channels = []
                 created_channels = []
@@ -990,7 +978,6 @@ class General(commands.Cog):
                     await ctx.send(embed=embed, view=delete_view)
                 else:
                     await ctx.send(embed=embed)
-                await ctx.send(embed=embed)
                 logger.info("Category '%s' processed: %d created, %d updated, %d skipped, %d extra", 
                            category_config['name'], len(created_channels), len(updated_channels), 
                            len(skipped_channels), len(extra_channels))
