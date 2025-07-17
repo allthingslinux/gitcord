@@ -144,6 +144,7 @@ class General(commands.Cog):
         logger.info("General cog loaded")
 
     @commands.command(name='fetchurl')
+    @commands.has_permissions(administrator=True)
     async def fetchurl_prefix(self, ctx: commands.Context, url: str) -> None:
         """Prefix command to fetch text content from a URL."""
         try:
@@ -222,8 +223,24 @@ class General(commands.Cog):
             )
             await ctx.send(embed=embed)
 
+    @fetchurl_prefix.error
+    async def fetchurl_prefix_error(self, ctx: commands.Context,
+                                    error: commands.CommandError) -> None:
+        """Handle errors for the fetchurl prefix command."""
+        if isinstance(error, commands.MissingPermissions):
+            embed = create_embed(
+                title="❌ Permission Denied",
+                description="You need the 'Administrator' permission to use this command.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+        else:
+            logger.error("Error in fetchurl prefix command: %s", error)
+            await ctx.send(f"An error occurred: {error}")
+
     @app_commands.command(name="fetchurl", description="Fetch and display text content from a URL")
     @app_commands.describe(url="The URL to fetch text content from")
+    @app_commands.checks.has_permissions(administrator=True)
     async def fetchurl(self, interaction: discord.Interaction, url: str) -> None:
         """Slash command to fetch text content from a URL."""
         await interaction.response.defer()
@@ -300,6 +317,25 @@ class General(commands.Cog):
                 color=discord.Color.red()
             )
             await interaction.followup.send(embed=embed)
+
+    @fetchurl.error
+    async def fetchurl_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError) -> None:
+        """Handle errors for the fetchurl slash command."""
+        if isinstance(error, app_commands.MissingPermissions):
+            embed = create_embed(
+                title="❌ Permission Denied",
+                description="You need the 'Administrator' permission to use this command.",
+                color=discord.Color.red()
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        else:
+            logger.error("Error in fetchurl slash command: %s", error)
+            embed = create_embed(
+                title="❌ Error",
+                description=f"An error occurred: {error}",
+                color=discord.Color.red()
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="slashping", description="Check bot latency (slash)")
     async def slashping(self, interaction: discord.Interaction) -> None:
