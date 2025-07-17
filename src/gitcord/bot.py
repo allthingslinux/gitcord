@@ -38,8 +38,7 @@ class GitCordBot(commands.Bot):
         # Load cogs
         await self._load_cogs()
 
-        # Sync command tree
-        await self.tree.sync()
+        # Command syncing is now done manually using the `/synccommands` slash command.
 
         logger.info("Bot setup completed")
 

@@ -25,6 +25,7 @@ Once it's ready, you'll have to link the **GitCord** bot to your own repository,
 - **Version-Controlled Configuration**: Store your Discord server configuration in a Git repository
 - **Automatic Sync**: Webhook-based synchronization when configuration changes are pushed to GitHub
 - **Manual Pull**: Use `/gitcord pull` command to manually sync configuration changes
+- **Command Syncing**: Use `/synccommands` to manually synchronize slash commands
 - **Category and Channel Management**: Organize your server structure through YAML configuration files
 
 ## Project Status

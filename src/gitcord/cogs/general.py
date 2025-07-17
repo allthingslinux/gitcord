@@ -312,6 +312,28 @@ class General(commands.Cog):
         )
         await interaction.response.send_message(embed=embed)
 
+    @app_commands.command(name="synccommands", description="Manually sync slash commands")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def synccommands(self, interaction: discord.Interaction) -> None:
+        """Synchronize application commands for this guild."""
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        try:
+            synced = await self.bot.tree.sync(guild=interaction.guild)
+            await interaction.followup.send(
+                f"Synced {len(synced)} command(s).",
+                ephemeral=True
+            )
+            logger.info(
+                "Manually synced %d command(s) in guild: %s",
+                len(synced),
+                interaction.guild.name if interaction.guild else "N/A"
+            )
+        except discord.DiscordException as e:
+            logger.error("Failed to sync commands: %s", e)
+            await interaction.followup.send(
+                f"Failed to sync commands: {e}", ephemeral=True
+            )
+
     @app_commands.command(name="createcategory", description="Create a category and its channels from YAML configuration")
     @app_commands.describe(yaml_path="Path to the category YAML file (optional)")
     async def createcategory_slash(self, interaction: discord.Interaction, yaml_path: str = None) -> None:

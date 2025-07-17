@@ -30,8 +30,8 @@ class EventHandler:  # pylint: disable=too-few-public-methods
         # Send restart message to guilds
         await self._send_restart_messages()
 
-        # Sync slash commands
-        await self._sync_commands()
+        # Slash commands are no longer automatically synced here.
+        # Use the `/synccommands` command to sync manually if needed.
 
     async def _send_restart_messages(self) -> None:
         """Send restart messages to available text channels."""
