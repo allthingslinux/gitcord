@@ -334,6 +334,53 @@ class General(commands.Cog):
                 f"Failed to sync commands: {e}", ephemeral=True
             )
 
+    @commands.command(name='synccommands')
+    @commands.has_permissions(administrator=True)
+    async def synccommands_prefix(self, ctx: commands.Context) -> None:
+        """Prefix command to manually sync slash commands."""
+        try:
+            # Send initial response
+            await ctx.send("🔄 Syncing slash commands...")
+            
+            synced = await self.bot.tree.sync(guild=ctx.guild)
+            
+            embed = create_embed(
+                title="✅ Commands Synced",
+                description=f"Successfully synced **{len(synced)}** command(s) to this guild.",
+                color=discord.Color.green()
+            )
+            
+            await ctx.send(embed=embed)
+            
+            logger.info(
+                "Manually synced %d command(s) in guild: %s via prefix command",
+                len(synced),
+                ctx.guild.name if ctx.guild else "N/A"
+            )
+        except discord.DiscordException as e:
+            embed = create_embed(
+                title="❌ Sync Failed",
+                description=f"Failed to sync commands: {str(e)}",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+            logger.error("Failed to sync commands via prefix command: %s", e)
+
+    @synccommands_prefix.error
+    async def synccommands_prefix_error(self, ctx: commands.Context,
+                                        error: commands.CommandError) -> None:
+        """Handle errors for the synccommands prefix command."""
+        if isinstance(error, commands.MissingPermissions):
+            embed = create_embed(
+                title="❌ Permission Denied",
+                description="You need the 'Administrator' permission to use this command.",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+        else:
+            logger.error("Error in synccommands prefix command: %s", error)
+            await ctx.send(f"An error occurred: {error}")
+
     @app_commands.command(name="createcategory", description="Create a category and its channels from YAML configuration")
     @app_commands.describe(yaml_path="Path to the category YAML file (optional)")
     async def createcategory_slash(self, interaction: discord.Interaction, yaml_path: str = None) -> None:

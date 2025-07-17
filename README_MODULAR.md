@@ -40,7 +40,7 @@ gitcord/
 ### Enhanced Features
 - **Rich Embeds**: Beautiful Discord embeds for responses
 - **Structured Logging**: Proper logging with formatting
-- **Command Syncing**: Use the `/synccommands` slash command to synchronize application commands
+- **Command Syncing**: Use the `/synccommands` (slash) or `!synccommands` (prefix) command to synchronize application commands
 - **Error Recovery**: Graceful error handling and recovery
 
 ## 📦 Installation
