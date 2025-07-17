@@ -4,24 +4,31 @@ This guide will help you set up the GitCord Discord bot on your server.
 
 ## Prerequisites
 
-1. **Python 3.8 or higher** installed on your system
+1. **Python 3.9 or higher** installed on your system
 2. **A Discord bot token** (see [Creating a Discord Bot](#creating-a-discord-bot) below)
 
 ## Quick Setup
 
-### 1. Install Dependencies
+### 1. Install uv
 
 ```bash
-pip install -r requirements.txt
+$ pip install -r requirements.txt
 ```
 
-### 2. Set Up Environment Variables
+### 2. Install the project
+
+```bash
+$ uv build
+$ pip install dist/*.whl
+```
+
+### 3. Set Up Environment Variables
 
 You have two options:
 
 #### Option A: Use the Setup Script (Recommended)
 ```bash
-python setup.py
+python setup-env.py
 ```
 This will guide you through creating the `.env` file with your bot token.
 
@@ -34,7 +41,7 @@ DISCORD_TOKEN=your_discord_bot_token_here
 ### 3. Run the Bot
 
 ```bash
-python bot.py
+python3 -m gitcord
 ```
 
 If everything is set up correctly, you should see:
