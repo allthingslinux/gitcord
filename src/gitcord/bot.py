@@ -44,13 +44,15 @@ class GitCordBot(commands.Bot):
 
     async def _load_cogs(self) -> None:
         """Load all bot cogs."""
-        # Load the general cog
-        await self.load_extension("gitcord.cogs.general")
-        logger.info("Loaded general cog")
+        # Load the modularized cogs
+        await self.load_extension("gitcord.cogs.admin")
+        await self.load_extension("gitcord.cogs.channels")
+        await self.load_extension("gitcord.cogs.utility")
+        await self.load_extension("gitcord.cogs.help")
+        logger.info("Loaded all modularized cogs")
 
         # Add more cogs here as they are created
         # await self.load_extension("gitcord.cogs.git")
-        # await self.load_extension("gitcord.cogs.admin")
 
     async def on_command_error(self, context, error):  # pylint: disable=arguments-differ
         """Global command error handler."""
