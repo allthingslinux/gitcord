@@ -1308,15 +1308,6 @@ class General(commands.Cog):
         
         await interaction.response.send_message(embed=embed)
 
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
-        """Handle command errors."""
-        if isinstance(error, commands.CommandNotFound):
-            await ctx.send("Command not found. Try `!help` or `!ping`!")
-        else:
-            logger.error("Command error in %s: %s", ctx.command, error)
-            await ctx.send(f"An error occurred: {error}")
-
 
 async def setup(bot: commands.Bot) -> None:
     """Set up the General cog."""
