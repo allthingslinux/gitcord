@@ -1204,11 +1204,115 @@ class General(commands.Cog):
             logger.error("Error in createcategory command: %s", error)
             await ctx.send(f"An error occurred: {error}")
 
+    @commands.command(name='help')
+    async def help_prefix(self, ctx: commands.Context) -> None:
+        """Prefix command to show help information and link to the wiki."""
+        embed = create_embed(
+            title="🤖 GitCord Help",
+            description="Welcome to GitCord! Here's how to get help and learn more about the bot.",
+            color=discord.Color.blue(),
+            author=ctx.author
+        )
+        
+        embed.add_field(
+            name="📚 Documentation",
+            value="For detailed documentation, tutorials, and guides, visit our [Wiki](https://github.com/evolvewithevan/gitcord/wiki)\n"
+                  "To see current issues, visit our [GitHub Issues](https://github.com/users/evolvewithevan/projects/4/views/1)",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="🔧 Available Commands",
+            value="• `!hello` - Get a friendly greeting\n"
+                  "• `!help` - Show help information and link to the wiki (***YOU ARE HERE***)\n"
+                  "• `!ping` - Check bot latency\n"
+                  "• `!fetchurl <url>` - Fetch content from a URL (Admin only)\n"
+                  "• `!createchannel` - Create a channel from YAML (Manage Channels)\n"
+                  "• `!createcategory` - Create a category from YAML (Manage Channels)\n"
+                  "• `!synccommands` - Sync slash commands (Admin only)",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="⚡ Slash Commands",
+            value="• `/slashping` - Check bot latency\n"
+                  "• `/fetchurl <url>` - Fetch content from a URL (Admin only)\n"
+                  "• `/createcategory [yaml_path]` - Create category from YAML (Manage Channels)\n"
+                  "• `/synccommands` - Sync slash commands (Admin only)",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="🔗 Quick Links",
+            value="• [GitHub Repository](https://github.com/evolvewithevan/gitcord)\n"
+                  "• [Github Project](https://github.com/users/evolvewithevan/projects/4/views/1)\n"
+                  "• [Roadmap](https://github.com/users/evolvewithevan/projects/4/views/3)\n"
+                  "• [Wiki Documentation](https://github.com/evolvewithevan/gitcord/wiki)\n"
+                  "• [Security Policy](https://github.com/evolvewithevan/gitcord/blob/main/SECURITY.md)",
+            inline=False
+        )
+        
+        embed.set_footer(text="GitCord - Discord bot for GitOps based server structure")
+        
+        await ctx.send(embed=embed)
+
+    @app_commands.command(name="help", description="Show help information and link to the wiki")
+    async def help_slash(self, interaction: discord.Interaction) -> None:
+        """Slash command to show help information and link to the wiki."""
+        embed = create_embed(
+            title="🤖 GitCord Help",
+            description="Welcome to GitCord! Here's how to get help and learn more about the bot.",
+            color=discord.Color.blue(),
+            author=interaction.user
+        )
+        
+        embed.add_field(
+            name="📚 Documentation",
+            value="For detailed documentation, tutorials, and guides, visit our [Wiki](https://github.com/evolvewithevan/gitcord/wiki)\n"
+                  "To see current issues, visit our [GitHub Issues](https://github.com/users/evolvewithevan/projects/4/views/1)",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="🔧 Available Commands",
+            value="• `!hello` - Get a friendly greeting\n"
+                  "• `!help` - Show help information and link to the wiki (***YOU ARE HERE***)\n"
+                  "• `!ping` - Check bot latency\n"
+                  "• `!fetchurl <url>` - Fetch content from a URL (Admin only)\n"
+                  "• `!createchannel` - Create a channel from YAML (Manage Channels)\n"
+                  "• `!createcategory` - Create a category from YAML (Manage Channels)\n"
+                  "• `!synccommands` - Sync slash commands (Admin only)",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="⚡ Slash Commands",
+            value="• `/slashping` - Check bot latency\n"
+                  "• `/fetchurl <url>` - Fetch content from a URL (Admin only)\n"
+                  "• `/createcategory [yaml_path]` - Create category from YAML (Manage Channels)\n"
+                  "• `/synccommands` - Sync slash commands (Admin only)",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="🔗 Quick Links",
+            value="• [GitHub Repository](https://github.com/evolvewithevan/gitcord)\n"
+                  "• [Github Project](https://github.com/users/evolvewithevan/projects/4/views/1)\n"
+                  "• [Roadmap](https://github.com/users/evolvewithevan/projects/4/views/3)\n"
+                  "• [Wiki Documentation](https://github.com/evolvewithevan/gitcord/wiki)\n"
+                  "• [Security Policy](https://github.com/evolvewithevan/gitcord/blob/main/SECURITY.md)",
+            inline=False
+        )
+        
+        embed.set_footer(text="GitCord - Discord bot for GitOps based server structure")
+        
+        await interaction.response.send_message(embed=embed)
+
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
         """Handle command errors."""
         if isinstance(error, commands.CommandNotFound):
-            await ctx.send("Command not found. Try `!hello` or `!ping`!")
+            await ctx.send("Command not found. Try `!help` or `!ping`!")
         else:
             logger.error("Command error in %s: %s", ctx.command, error)
             await ctx.send(f"An error occurred: {error}")
