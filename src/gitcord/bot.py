@@ -56,7 +56,7 @@ class GitCordBot(commands.Bot):
         """Global command error handler."""
         logger.error("Global command error: %s", error)
         if isinstance(error, commands.CommandNotFound):
-            await context.send("Command not found. Try `!hello` or `!ping`!")
+            await context.send("Command not found. Try `!help` or `!ping`!")
         elif isinstance(error, commands.MissingPermissions):
             await context.send("You don't have permission to use this command!")
         elif isinstance(error, commands.CommandError):
