@@ -1,12 +1,20 @@
-            - name: Ruff Check
-  # You may pin to the exact commit or the version.
-  # uses: jpetrucciani/ruff-check@95ff5ea372c5099efb7a38151f8aef8fee435c47
-  uses: jpetrucciani/ruff-check@0.1.0
-  with:
-    # File or directory to run ruff on
-    path: # optional, default is .
-    # Optional ruff flags (refer to `ruff --help`)
-    flags: # optional, default is 
-    # Format to output ruff messages in
-    format: # optional, default is github
-          
+name: Ruff Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ruff-lint:
+    name: Ruff Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Ruff
+        uses: chartboost/ruff-action@v1
+        with:
+          args: .
