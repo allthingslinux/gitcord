@@ -7,4 +7,4 @@ CATEGORY_YAML_PATH = "/home/user/Projects/gitcord-template/community/category.ya
 OFFTOPIC_YAML_PATH = "/home/user/Projects/gitcord-template/community/off-topic.yaml"
 TEMPLATE_DIR = "/home/user/Projects/gitcord-template/community/"
 
-# Add more paths as needed 
+# Add more paths as needed

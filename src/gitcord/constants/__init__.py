@@ -1,1 +1,1 @@
-# Make constants a package 
+# Make constants a package

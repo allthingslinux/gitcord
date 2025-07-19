@@ -23,7 +23,7 @@ class GitCordBot(commands.Bot):
         super().__init__(
             command_prefix=config.prefix,
             intents=intents,
-            help_command=None  # We can implement a custom help command later
+            help_command=None,  # We can implement a custom help command later
         )
 
         # Set up event handlers
@@ -54,7 +54,9 @@ class GitCordBot(commands.Bot):
         # Add more cogs here as they are created
         # await self.load_extension("gitcord.cogs.git")
 
-    async def on_command_error(self, context, error):  # pylint: disable=arguments-differ
+    async def on_command_error(
+        self, context, error
+    ):  # pylint: disable=arguments-differ
         """Global command error handler."""
         logger.error("Global command error: %s", error)
         if isinstance(error, commands.CommandNotFound):
@@ -76,7 +78,9 @@ async def main() -> None:
         await bot.start(config.token)
 
     except discord.LoginFailure:
-        logger.error("Invalid Discord token! Please check your DISCORD_TOKEN in the .env file.")
+        logger.error(
+            "Invalid Discord token! Please check your DISCORD_TOKEN in the .env file."
+        )
     except ValueError as e:
         logger.error("Configuration error: %s", e)
 

@@ -22,7 +22,7 @@ class Config:
     def token(self) -> str:
         """Get Discord bot token from environment variables."""
         if not self._token:
-            self._token = os.getenv('DISCORD_TOKEN')
+            self._token = os.getenv("DISCORD_TOKEN")
             if not self._token:
                 raise ValueError("DISCORD_TOKEN not found in environment variables!")
         return self._token

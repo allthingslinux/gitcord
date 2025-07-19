@@ -1,6 +1,7 @@
 """
 Helper utilities for GitCord bot.
 """
+
 import os
 from datetime import datetime
 from typing import Optional, Union
@@ -29,7 +30,7 @@ def create_embed(
     color: Union[int, discord.Color] = discord.Color.blue(),
     author: Optional[discord.Member] = None,
     timestamp: Optional[datetime] = None,
-    footer: Optional[str] = None
+    footer: Optional[str] = None,
 ) -> discord.Embed:
     """
     Create a formatted Discord embed.
@@ -49,14 +50,11 @@ def create_embed(
         title=title,
         description=description,
         color=color,
-        timestamp=timestamp or datetime.utcnow()
+        timestamp=timestamp or datetime.utcnow(),
     )
 
     if author:
-        embed.set_author(
-            name=author.display_name,
-            icon_url=author.display_avatar.url
-        )
+        embed.set_author(name=author.display_name, icon_url=author.display_avatar.url)
 
     if footer:
         embed.set_footer(text=footer)
@@ -78,7 +76,7 @@ def truncate_text(text: str, max_length: int = 1024) -> str:
     if len(text) <= max_length:
         return text
 
-    return text[:max_length-3] + "..."
+    return text[: max_length - 3] + "..."
 
 
 def format_time_delta(seconds: float) -> str:
@@ -105,11 +103,11 @@ def parse_channel_config(yaml_path: str) -> dict:
     if not os.path.exists(yaml_path):
         raise ValueError(f"YAML file not found at: {yaml_path}")
 
-    with open(yaml_path, 'r', encoding='utf-8') as file:
+    with open(yaml_path, "r", encoding="utf-8") as file:
         channel_config = yaml.safe_load(file)
 
     # Validate required fields
-    required_fields = ['name', 'type']
+    required_fields = ["name", "type"]
     for field in required_fields:
         if field not in channel_config:
             raise ValueError(f"Missing required field: {field}")

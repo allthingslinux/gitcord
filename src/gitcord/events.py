@@ -19,13 +19,11 @@ class EventHandler:  # pylint: disable=too-few-public-methods
 
     async def on_ready(self) -> None:
         """Event triggered when the bot is ready and connected to Discord."""
-        logger.info('%s has connected to Discord!', self.bot.user)
-        logger.info('Bot is in %d guild(s)', len(self.bot.guilds))
+        logger.info("%s has connected to Discord!", self.bot.user)
+        logger.info("Bot is in %d guild(s)", len(self.bot.guilds))
 
         # Set bot status
-        await self.bot.change_presence(
-            activity=discord.Game(name=config.activity_name)
-        )
+        await self.bot.change_presence(activity=discord.Game(name=config.activity_name))
 
         # Send restart message to guilds
         await self._send_restart_messages()
@@ -42,13 +40,23 @@ class EventHandler:  # pylint: disable=too-few-public-methods
                 if channel.permissions_for(guild.me).send_messages:
                     try:
                         await channel.send("Bot has restarted successfully!")
-                        logger.info("Sent restart message to %s in %s", channel.name, guild.name)
+                        logger.info(
+                            "Sent restart message to %s in %s", channel.name, guild.name
+                        )
                     except discord.DiscordException as e:
-                        logger.error("Failed to send message to %s in %s: %s",
-                                   channel.name, guild.name, e)
+                        logger.error(
+                            "Failed to send message to %s in %s: %s",
+                            channel.name,
+                            guild.name,
+                            e,
+                        )
                     except Exception as e:  # pylint: disable=broad-except
-                        logger.error("Failed to send message to %s in %s: %s",
-                                   channel.name, guild.name, e)
+                        logger.error(
+                            "Failed to send message to %s in %s: %s",
+                            channel.name,
+                            guild.name,
+                            e,
+                        )
                     break  # Only send to the first available channel
 
     async def _sync_commands(self) -> None:
@@ -85,6 +93,6 @@ def setup_events(bot: commands.Bot) -> EventHandler:
     event_handler = EventHandler(bot)
 
     # Register event handlers
-    bot.add_listener(event_handler.on_ready, 'on_ready')
+    bot.add_listener(event_handler.on_ready, "on_ready")
 
     return event_handler

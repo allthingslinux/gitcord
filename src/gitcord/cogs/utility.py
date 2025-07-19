@@ -19,24 +19,24 @@ class Utility(commands.Cog):
         self.bot = bot
         logger.info("Utility cog loaded")
 
-    @commands.command(name='hello')
+    @commands.command(name="hello")
     async def hello(self, ctx: commands.Context) -> None:
         """Simple hello world command."""
         embed = create_embed(
             title="👋 Welcome!",
             description=f"Hello, {ctx.author.mention}! Welcome to GitCord!",
-            color=discord.Color.blue()
+            color=discord.Color.blue(),
         )
         await ctx.send(embed=embed)
 
-    @commands.command(name='ping')
+    @commands.command(name="ping")
     async def ping_prefix(self, ctx: commands.Context) -> None:
         """Check bot latency."""
         latency = format_latency(self.bot.latency)
         embed = create_embed(
             title="🏓 Pong!",
             description=f"Latency: **{latency}**",
-            color=discord.Color.green()
+            color=discord.Color.green(),
         )
         await ctx.send(embed=embed)
 
@@ -47,11 +47,11 @@ class Utility(commands.Cog):
         embed = create_embed(
             title="🏓 Pong!",
             description=f"Latency: **{latency}**",
-            color=discord.Color.green()
+            color=discord.Color.green(),
         )
         await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot: commands.Bot) -> None:
     """Set up the Utility cog."""
-    await bot.add_cog(Utility(bot)) 
+    await bot.add_cog(Utility(bot))
