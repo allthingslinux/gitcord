@@ -7,17 +7,17 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from .base_cog import BaseCog
 from ..utils.helpers import create_embed, format_latency
-from ..utils.logger import main_logger as logger
 
 
-class Utility(commands.Cog):
+class Utility(BaseCog):
     """Basic utility commands."""
 
     def __init__(self, bot: commands.Bot):
         """Initialize the Utility cog."""
-        self.bot = bot
-        logger.info("Utility cog loaded")
+        super().__init__(bot)
+        self.logger.info("Utility cog loaded")
 
     @commands.command(name="hello")
     async def hello(self, ctx: commands.Context) -> None:
