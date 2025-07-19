@@ -39,20 +39,19 @@ class DeleteExtraChannelsView(View):
             return
 
         # Create confirmation embed
-        channel_list = "\n".join(
-            [f"• {channel.mention}" for channel in self.extra_channels]
-        )
+        channel_list = "\n".join([f"• {channel.mention}" for channel in self.extra_channels])
         embed = create_embed(
             title="⚠️ Confirm Deletion",
-            description=f"Are you sure you want to delete the following channels from **{self.category_name}**?\n\n{channel_list}\n\n**This action is irreversible!**",
+            description=(
+                f"Are you sure you want to delete the following channels from "
+                f"**{self.category_name}**?\n\n{channel_list}\n\n**This action is irreversible!**"
+            ),
             color=discord.Color.orange(),
         )
 
         # Create confirmation view
         confirm_view = ConfirmDeleteView(self.extra_channels, self.category_name)
-        await interaction.response.send_message(
-            embed=embed, view=confirm_view, ephemeral=True
-        )
+        await interaction.response.send_message(embed=embed, view=confirm_view, ephemeral=True)
 
 
 class ConfirmDeleteView(View):
@@ -105,25 +104,26 @@ class ConfirmDeleteView(View):
         if deleted_channels:
             embed = create_embed(
                 title="✅ Channels Deleted",
-                description=f"Successfully deleted {len(deleted_channels)} extra channels from **{self.category_name}**",
+                description=(
+                    f"Successfully deleted {len(deleted_channels)} extra channels "
+                    f"from **{self.category_name}**"
+                ),
                 color=discord.Color.green(),
             )
 
             if deleted_channels:
                 deleted_list = "\n".join([f"• #{name}" for name in deleted_channels])
-                embed.add_field(
-                    name="Deleted Channels", value=deleted_list, inline=False
-                )
+                embed.add_field(name="Deleted Channels", value=deleted_list, inline=False)
 
             if failed_channels:
                 failed_list = "\n".join([f"• #{name}" for name in failed_channels])
-                embed.add_field(
-                    name="Failed to Delete", value=failed_list, inline=False
-                )
+                embed.add_field(name="Failed to Delete", value=failed_list, inline=False)
         else:
             embed = create_embed(
                 title="❌ Deletion Failed",
-                description="Failed to delete any channels. Please check permissions and try again.",
+                description=(
+                    "Failed to delete any channels. Please check permissions and try again."
+                ),
                 color=discord.Color.red(),
             )
 

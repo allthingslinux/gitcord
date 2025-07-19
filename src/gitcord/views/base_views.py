@@ -56,7 +56,7 @@ class ConfirmationView(BaseView):
         self.result = True
         embed = create_embed(
             title="✅ Confirmed",
-            description="Action confirmed successfully.",
+            description=self.description,
             color=discord.Color.green(),
         )
         await interaction.response.edit_message(embed=embed, view=None)

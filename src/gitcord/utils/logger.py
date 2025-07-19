@@ -23,9 +23,7 @@ def setup_logger(name: str = "gitcord", level: int = logging.INFO) -> logging.Lo
     # Avoid adding handlers if they already exist
     if not logger.handlers:
         handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - " "%(message)s"
-        )
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 

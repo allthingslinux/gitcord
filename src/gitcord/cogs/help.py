@@ -30,8 +30,12 @@ class Help(commands.Cog):
 
         embed.add_field(
             name="📚 Documentation",
-            value="For detailed documentation, tutorials, and guides, visit our [Wiki](https://github.com/evolvewithevan/gitcord/wiki)\n"
-            "To see current issues, visit our [GitHub Issues](https://github.com/users/evolvewithevan/projects/4/views/1)",
+            value=(
+                "For detailed documentation, tutorials, and guides, visit our "
+                "[Wiki](https://github.com/evolvewithevan/gitcord/wiki)\n"
+                "To see current issues, visit our "
+                "[GitHub Issues](https://github.com/users/evolvewithevan/projects/4/views/1)"
+            ),
             inline=False,
         )
 
@@ -70,9 +74,7 @@ class Help(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @app_commands.command(
-        name="help", description="Show help information and link to the wiki"
-    )
+    @app_commands.command(name="help", description="Show help information and link to the wiki")
     async def help_slash(self, interaction: discord.Interaction) -> None:
         """Slash command to show help information and link to the wiki."""
         embed = create_embed(
@@ -83,8 +85,12 @@ class Help(commands.Cog):
 
         embed.add_field(
             name="📚 Documentation",
-            value="For detailed documentation, tutorials, and guides, visit our [Wiki](https://github.com/evolvewithevan/gitcord/wiki)\n"
-            "To see current issues, visit our [GitHub Issues](https://github.com/users/evolvewithevan/projects/4/views/1)",
+            value=(
+                "For detailed documentation, tutorials, and guides, visit our "
+                "[Wiki](https://github.com/evolvewithevan/gitcord/wiki)\n"
+                "To see current issues, visit our "
+                "[GitHub Issues](https://github.com/users/evolvewithevan/projects/4/views/1)"
+            ),
             inline=False,
         )
 

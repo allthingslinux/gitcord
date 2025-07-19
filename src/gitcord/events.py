@@ -40,9 +40,7 @@ class EventHandler:  # pylint: disable=too-few-public-methods
                 if channel.permissions_for(guild.me).send_messages:
                     try:
                         await channel.send("Bot has restarted successfully!")
-                        logger.info(
-                            "Sent restart message to %s in %s", channel.name, guild.name
-                        )
+                        logger.info("Sent restart message to %s in %s", channel.name, guild.name)
                     except discord.DiscordException as e:
                         logger.error(
                             "Failed to send message to %s in %s: %s",

@@ -17,7 +17,7 @@ from ..utils.helpers import (
     create_channel_kwargs,
     create_channel_by_type,
     check_channel_exists,
-    create_channel_list_embed
+    create_channel_list_embed,
 )
 from ..views import DeleteExtraChannelsView
 
@@ -43,12 +43,12 @@ class Channels(BaseCog):
 
         # Create the channel based on type
         new_channel = await create_channel_by_type(ctx.guild, channel_config, channel_kwargs)
-        
+
         if not new_channel:
             await self.send_error(
                 ctx,
                 "❌ Invalid Channel Type",
-                f"Channel type '{channel_config['type']}' is not supported. Use 'text' or 'voice'."
+                f"Channel type '{channel_config['type']}' is not supported. Use 'text' or 'voice'.",
             )
             return
 
@@ -97,7 +97,7 @@ class Channels(BaseCog):
             if not ctx.guild:
                 await self.send_error(ctx, "❌ Error", "Guild not found")
                 return
-                
+
             existing_category = discord.utils.get(
                 ctx.guild.categories, name=category_config["name"]
             )
@@ -112,26 +112,36 @@ class Channels(BaseCog):
                 yaml_channel_names = set()
                 for channel_name in category_config["channels"]:
                     try:
-                        channel_yaml_path = f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                        channel_yaml_path = (
+                            f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                        )
                         channel_config = parse_channel_config(channel_yaml_path)
 
                         # Check if channel already exists in the category
-                        existing_channel = check_channel_exists(existing_category, channel_config["name"])
+                        existing_channel = check_channel_exists(
+                            existing_category, channel_config["name"]
+                        )
 
                         if existing_channel:
                             # Channel exists, check for differences and update
                             channel_updated = False
                             update_kwargs = {}
                             # Only check topic if TextChannel
-                            if hasattr(existing_channel, "topic") and existing_channel.topic != channel_config.get("topic", ""):
+                            if hasattr(
+                                existing_channel, "topic"
+                            ) and existing_channel.topic != channel_config.get("topic", ""):
                                 update_kwargs["topic"] = channel_config.get("topic", "")
                                 channel_updated = True
                             # Only check nsfw if attribute exists
-                            if hasattr(existing_channel, "nsfw") and existing_channel.nsfw != channel_config.get("nsfw", False):
+                            if hasattr(
+                                existing_channel, "nsfw"
+                            ) and existing_channel.nsfw != channel_config.get("nsfw", False):
                                 update_kwargs["nsfw"] = channel_config.get("nsfw", False)
                                 channel_updated = True
                             # Only check position if attribute exists
-                            if "position" in channel_config and hasattr(existing_channel, "position"):
+                            if "position" in channel_config and hasattr(
+                                existing_channel, "position"
+                            ):
                                 if existing_channel.position != channel_config["position"]:
                                     update_kwargs["position"] = channel_config["position"]
                                     channel_updated = True
@@ -148,11 +158,15 @@ class Channels(BaseCog):
                                 skipped_channels.append(channel_config["name"])
                         else:
                             # Channel doesn't exist, create it
-                            channel_kwargs = create_channel_kwargs(channel_config, existing_category)
-                            
+                            channel_kwargs = create_channel_kwargs(
+                                channel_config, existing_category
+                            )
+
                             # Create the channel based on type
-                            new_channel = await create_channel_by_type(ctx.guild, channel_config, channel_kwargs)
-                            
+                            new_channel = await create_channel_by_type(
+                                ctx.guild, channel_config, channel_kwargs
+                            )
+
                             if new_channel:
                                 created_channels.append(new_channel)
                                 self.logger.info(
@@ -171,9 +185,7 @@ class Channels(BaseCog):
                         yaml_channel_names.add(channel_config["name"])
 
                     except Exception as e:
-                        self.logger.error(
-                            "Failed to create channel '%s': %s", channel_name, e
-                        )
+                        self.logger.error("Failed to create channel '%s': %s", channel_name, e)
                         continue
 
                 # Find extra channels that exist but aren't in YAML
@@ -186,11 +198,13 @@ class Channels(BaseCog):
                     "✅ Category Updated",
                     created_channels,
                     len(category_config["channels"]),
-                    category_config["name"]
+                    category_config["name"],
                 )
 
                 if updated_channels:
-                    updated_list = "\n".join([f"• {channel.mention}" for channel in updated_channels])
+                    updated_list = "\n".join(
+                        [f"• {channel.mention}" for channel in updated_channels]
+                    )
                     embed.add_field(name="Updated Channels", value=updated_list, inline=False)
 
                 if skipped_channels:
@@ -203,7 +217,7 @@ class Channels(BaseCog):
                     embed.add_field(
                         name="Action Required",
                         value="Use the button below to delete extra channels if needed.",
-                        inline=False
+                        inline=False,
                     )
                     view = DeleteExtraChannelsView(extra_channels, self.logger)
                     await ctx.send(embed=embed, view=view)
@@ -227,10 +241,12 @@ class Channels(BaseCog):
             }
             new_category = await ctx.guild.create_category(**category_kwargs)
             created_channels = []
-            
+
             for channel_name in category_config["channels"]:
                 try:
-                    channel_yaml_path = f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                    channel_yaml_path = (
+                        f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                    )
                     channel_config = parse_channel_config(channel_yaml_path)
 
                     # Check if channel already exists in the category
@@ -247,8 +263,10 @@ class Channels(BaseCog):
                     channel_kwargs = create_channel_kwargs(channel_config, new_category)
 
                     # Create the channel based on type
-                    new_channel = await create_channel_by_type(ctx.guild, channel_config, channel_kwargs)
-                    
+                    new_channel = await create_channel_by_type(
+                        ctx.guild, channel_config, channel_kwargs
+                    )
+
                     if new_channel:
                         created_channels.append(new_channel)
                         self.logger.info(
@@ -265,9 +283,7 @@ class Channels(BaseCog):
                         continue
 
                 except Exception as e:
-                    self.logger.error(
-                        "Failed to create channel '%s': %s", channel_name, e
-                    )
+                    self.logger.error("Failed to create channel '%s': %s", channel_name, e)
                     continue
 
             # Create result embed
@@ -275,7 +291,7 @@ class Channels(BaseCog):
                 "✅ Category Created",
                 created_channels,
                 len(category_config["channels"]),
-                category_config["name"]
+                category_config["name"],
             )
 
             await ctx.send(embed=embed)
@@ -292,9 +308,7 @@ class Channels(BaseCog):
         except Exception as e:  # pylint: disable=broad-except
             self.logger.error("Unexpected error in createcategory command: %s", e)
             await self.send_error(
-                ctx,
-                "❌ Unexpected Error",
-                f"An unexpected error occurred: {str(e)}"
+                ctx, "❌ Unexpected Error", f"An unexpected error occurred: {str(e)}"
             )
 
     @app_commands.command(
@@ -372,7 +386,9 @@ class Channels(BaseCog):
                 yaml_channel_names = set()
                 for channel_name in category_config["channels"]:
                     try:
-                        channel_yaml_path = f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                        channel_yaml_path = (
+                            f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                        )
                         channel_config = parse_channel_config(channel_yaml_path)
                         yaml_channel_names.add(channel_config["name"])
                     except Exception as e:
@@ -396,9 +412,7 @@ class Channels(BaseCog):
                 category_updated = False
                 if existing_category.position != category_config.get("position", 0):
                     try:
-                        await existing_category.edit(
-                            position=category_config.get("position", 0)
-                        )
+                        await existing_category.edit(position=category_config.get("position", 0))
                         category_updated = True
                         self.logger.info(
                             "Updated category '%s' position from %d to %d",
@@ -413,7 +427,9 @@ class Channels(BaseCog):
                 for channel_name in category_config["channels"]:
                     try:
                         # Construct path to individual channel YAML file
-                        channel_yaml_path = f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                        channel_yaml_path = (
+                            f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                        )
 
                         # Parse individual channel configuration
                         channel_config = parse_channel_config(channel_yaml_path)
@@ -431,26 +447,19 @@ class Channels(BaseCog):
                             # Check topic differences (only for text channels)
                             if hasattr(
                                 existing_channel, "topic"
-                            ) and existing_channel.topic != channel_config.get(
-                                "topic", ""
-                            ):
+                            ) and existing_channel.topic != channel_config.get("topic", ""):
                                 update_kwargs["topic"] = channel_config.get("topic", "")
                                 channel_updated = True
 
                             # Check NSFW differences
-                            if existing_channel.nsfw != channel_config.get(
-                                "nsfw", False
-                            ):
-                                update_kwargs["nsfw"] = channel_config.get(
-                                    "nsfw", False
-                                )
+                            if existing_channel.nsfw != channel_config.get("nsfw", False):
+                                update_kwargs["nsfw"] = channel_config.get("nsfw", False)
                                 channel_updated = True
 
                             # Check position differences
                             if (
                                 "position" in channel_config
-                                and existing_channel.position
-                                != channel_config["position"]
+                                and existing_channel.position != channel_config["position"]
                             ):
                                 update_kwargs["position"] = channel_config["position"]
                                 channel_updated = True
@@ -490,26 +499,18 @@ class Channels(BaseCog):
 
                                 # Add topic only for text channels
                                 if channel_config["type"].lower() == "text":
-                                    channel_kwargs["topic"] = channel_config.get(
-                                        "topic", ""
-                                    )
+                                    channel_kwargs["topic"] = channel_config.get("topic", "")
 
                                 if "position" in channel_config:
-                                    channel_kwargs["position"] = channel_config[
-                                        "position"
-                                    ]
+                                    channel_kwargs["position"] = channel_config["position"]
 
                                 if channel_config["type"].lower() == "text":
-                                    new_channel = (
-                                        await interaction.guild.create_text_channel(
-                                            **channel_kwargs
-                                        )
+                                    new_channel = await interaction.guild.create_text_channel(
+                                        **channel_kwargs
                                     )
                                 elif channel_config["type"].lower() == "voice":
-                                    new_channel = (
-                                        await interaction.guild.create_voice_channel(
-                                            **channel_kwargs
-                                        )
+                                    new_channel = await interaction.guild.create_voice_channel(
+                                        **channel_kwargs
                                     )
                                 else:
                                     self.logger.warning(
@@ -533,9 +534,7 @@ class Channels(BaseCog):
                                 skipped_channels.append(channel_config["name"])
 
                     except Exception as e:
-                        self.logger.error(
-                            "Failed to process channel '%s': %s", channel_name, e
-                        )
+                        self.logger.error("Failed to process channel '%s': %s", channel_name, e)
                         skipped_channels.append(channel_name)
                         continue
 
@@ -547,17 +546,11 @@ class Channels(BaseCog):
                 )
 
                 # Add fields
-                embed.add_field(
-                    name="Category", value=existing_category.mention, inline=True
-                )
+                embed.add_field(name="Category", value=existing_category.mention, inline=True)
                 if category_updated:
-                    embed.add_field(
-                        name="Category Updated", value="✅ Position", inline=True
-                    )
+                    embed.add_field(name="Category Updated", value="✅ Position", inline=True)
                 else:
-                    embed.add_field(
-                        name="Category Updated", value="❌ No changes", inline=True
-                    )
+                    embed.add_field(name="Category Updated", value="❌ No changes", inline=True)
 
                 embed.add_field(
                     name="Channels Created",
@@ -574,35 +567,23 @@ class Channels(BaseCog):
                     value=str(len(skipped_channels)),
                     inline=True,
                 )
-                embed.add_field(
-                    name="Extra Channels", value=str(len(extra_channels)), inline=True
-                )
+                embed.add_field(name="Extra Channels", value=str(len(extra_channels)), inline=True)
 
                 if created_channels:
                     channel_list = "\n".join(
                         [f"• {channel.mention} (new)" for channel in created_channels]
                     )
-                    embed.add_field(
-                        name="New Channels", value=channel_list, inline=False
-                    )
+                    embed.add_field(name="New Channels", value=channel_list, inline=False)
 
                 if updated_channels:
                     channel_list = "\n".join(
-                        [
-                            f"• {channel.mention} (updated)"
-                            for channel in updated_channels
-                        ]
+                        [f"• {channel.mention} (updated)" for channel in updated_channels]
                     )
-                    embed.add_field(
-                        name="Updated Channels", value=channel_list, inline=False
-                    )
+                    embed.add_field(name="Updated Channels", value=channel_list, inline=False)
 
                 if extra_channels:
                     channel_list = "\n".join(
-                        [
-                            f"• {channel.mention} (not in YAML)"
-                            for channel in extra_channels
-                        ]
+                        [f"• {channel.mention} (not in YAML)" for channel in extra_channels]
                     )
                     embed.add_field(
                         name="Extra Channels (Not in YAML)",
@@ -612,9 +593,7 @@ class Channels(BaseCog):
 
                 # Add delete button if there are extra channels
                 if extra_channels:
-                    delete_view = DeleteExtraChannelsView(
-                        extra_channels, existing_category.name
-                    )
+                    delete_view = DeleteExtraChannelsView(extra_channels, existing_category.name)
                     await interaction.followup.send(embed=embed, view=delete_view)
                 else:
                     await interaction.followup.send(embed=embed)
@@ -642,7 +621,9 @@ class Channels(BaseCog):
             for channel_name in category_config["channels"]:
                 try:
                     # Construct path to individual channel YAML file
-                    channel_yaml_path = f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                    channel_yaml_path = (
+                        f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                    )
 
                     # Parse individual channel configuration
                     channel_config = parse_channel_config(channel_yaml_path)
@@ -676,13 +657,9 @@ class Channels(BaseCog):
 
                     # Create the channel based on type
                     if channel_config["type"].lower() == "text":
-                        new_channel = await interaction.guild.create_text_channel(
-                            **channel_kwargs
-                        )
+                        new_channel = await interaction.guild.create_text_channel(**channel_kwargs)
                     elif channel_config["type"].lower() == "voice":
-                        new_channel = await interaction.guild.create_voice_channel(
-                            **channel_kwargs
-                        )
+                        new_channel = await interaction.guild.create_voice_channel(**channel_kwargs)
                     else:
                         self.logger.warning(
                             "Skipping channel '%s': Invalid type '%s'",
@@ -711,12 +688,8 @@ class Channels(BaseCog):
 
             # Add fields
             embed.add_field(name="Category Name", value=new_category.name, inline=True)
-            embed.add_field(
-                name="Category Type", value=category_config["type"], inline=True
-            )
-            embed.add_field(
-                name="Position", value=category_config.get("position", 0), inline=True
-            )
+            embed.add_field(name="Category Type", value=category_config["type"], inline=True)
+            embed.add_field(name="Position", value=category_config.get("position", 0), inline=True)
             embed.add_field(
                 name="Channels Created",
                 value=f"{len(created_channels)}/{len(category_config['channels'])}",
@@ -724,12 +697,8 @@ class Channels(BaseCog):
             )
 
             if created_channels:
-                channel_list = "\n".join(
-                    [f"• {channel.mention}" for channel in created_channels]
-                )
-                embed.add_field(
-                    name="Created Channels", value=channel_list, inline=False
-                )
+                channel_list = "\n".join([f"• {channel.mention}" for channel in created_channels])
+                embed.add_field(name="Created Channels", value=channel_list, inline=False)
 
             await interaction.followup.send(embed=embed)
             self.logger.info(
@@ -742,7 +711,9 @@ class Channels(BaseCog):
         except discord.Forbidden:
             embed = create_embed(
                 title="❌ Permission Error",
-                description="I don't have permission to create categories or channels in this server.",
+                description=(
+                    "I don't have permission to create categories or channels in this server."
+                ),
                 color=discord.Color.red(),
             )
             await interaction.followup.send(embed=embed)

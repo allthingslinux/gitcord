@@ -3,7 +3,6 @@ Base cog class with common functionality.
 """
 
 import logging
-from typing import Optional
 
 import discord
 from discord.ext import commands
@@ -23,14 +22,14 @@ class BaseCog(commands.Cog):
         self.bot = bot
         self.logger = logging.getLogger(f"gitcord.{self.__class__.__name__.lower()}")
 
-    async def cog_command_error(
-        self, ctx: commands.Context, error: commands.CommandError
-    ) -> None:
+    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
         """Handle errors for all commands in this cog."""
         await handle_command_error(ctx, error, self.logger)
 
     async def cog_app_command_error(
-        self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError
+        self,
+        interaction: discord.Interaction,
+        error: discord.app_commands.AppCommandError,
     ) -> None:
         """Handle errors for all app commands in this cog."""
         await handle_interaction_error(interaction, error, self.logger)
@@ -65,4 +64,4 @@ class BaseCog(commands.Cog):
     ) -> None:
         """Send a success embed via interaction."""
         embed = self.create_success_embed(title, description)
-        await interaction.followup.send(embed=embed) 
+        await interaction.followup.send(embed=embed)

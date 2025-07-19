@@ -63,7 +63,7 @@ class Admin(BaseCog):
                 await self.send_error(
                     ctx,
                     "❌ No Content Found",
-                    "No readable text content was found on the provided URL."
+                    "No readable text content was found on the provided URL.",
                 )
                 return
 
@@ -79,21 +79,15 @@ class Admin(BaseCog):
 
         except requests.exceptions.RequestException as e:
             await self.send_error(
-                ctx,
-                "❌ Fetch Error",
-                f"Failed to fetch content from the URL: {str(e)}"
+                ctx, "❌ Fetch Error", f"Failed to fetch content from the URL: {str(e)}"
             )
         except Exception as e:  # pylint: disable=broad-except
             self.logger.error("Error in fetchurl command: %s", e)
             await self.send_error(
-                ctx,
-                "❌ Unexpected Error",
-                f"An unexpected error occurred: {str(e)}"
+                ctx, "❌ Unexpected Error", f"An unexpected error occurred: {str(e)}"
             )
 
-    @app_commands.command(
-        name="fetchurl", description="Fetch and display text content from a URL"
-    )
+    @app_commands.command(name="fetchurl", description="Fetch and display text content from a URL")
     @app_commands.describe(url="The URL to fetch text content from")
     @app_commands.checks.has_permissions(administrator=True)
     async def fetchurl(self, interaction: discord.Interaction, url: str) -> None:
@@ -108,7 +102,7 @@ class Admin(BaseCog):
                 await self.send_interaction_error(
                     interaction,
                     "❌ No Content Found",
-                    "No readable text content was found on the provided URL."
+                    "No readable text content was found on the provided URL.",
                 )
                 return
 
@@ -126,28 +120,24 @@ class Admin(BaseCog):
             await self.send_interaction_error(
                 interaction,
                 "❌ Fetch Error",
-                f"Failed to fetch content from the URL: {str(e)}"
+                f"Failed to fetch content from the URL: {str(e)}",
             )
         except Exception as e:  # pylint: disable=broad-except
             self.logger.error("Error in fetchurl command: %s", e)
             await self.send_interaction_error(
                 interaction,
                 "❌ Unexpected Error",
-                f"An unexpected error occurred: {str(e)}"
+                f"An unexpected error occurred: {str(e)}",
             )
 
-    @app_commands.command(
-        name="synccommands", description="Manually sync slash commands"
-    )
+    @app_commands.command(name="synccommands", description="Manually sync slash commands")
     @app_commands.checks.has_permissions(administrator=True)
     async def synccommands(self, interaction: discord.Interaction) -> None:
         """Synchronize application commands for this guild."""
         await interaction.response.defer(thinking=True, ephemeral=True)
         try:
             synced = await self.bot.tree.sync(guild=interaction.guild)
-            await interaction.followup.send(
-                f"Synced {len(synced)} command(s).", ephemeral=True
-            )
+            await interaction.followup.send(f"Synced {len(synced)} command(s).", ephemeral=True)
             self.logger.info(
                 "Manually synced %d command(s) in guild: %s",
                 len(synced),
@@ -155,9 +145,7 @@ class Admin(BaseCog):
             )
         except Exception as e:
             self.logger.error("Failed to sync commands: %s", e)
-            await interaction.followup.send(
-                f"Failed to sync commands: {e}", ephemeral=True
-            )
+            await interaction.followup.send(f"Failed to sync commands: {e}", ephemeral=True)
 
     @commands.command(name="synccommands")
     @commands.has_permissions(administrator=True)
@@ -184,11 +172,7 @@ class Admin(BaseCog):
             )
         except Exception as e:
             self.logger.error("Failed to sync commands via prefix command: %s", e)
-            await self.send_error(
-                ctx,
-                "❌ Sync Failed",
-                f"Failed to sync commands: {e}"
-            )
+            await self.send_error(ctx, "❌ Sync Failed", f"Failed to sync commands: {e}")
 
 
 async def setup(bot: commands.Bot) -> None:
