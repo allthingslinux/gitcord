@@ -96,7 +96,7 @@ class ConfirmDeleteView(View):
                     channel_name,
                     self.category_name,
                 )
-            except Exception as e:
+            except (discord.Forbidden, discord.HTTPException, OSError) as e:
                 failed_channels.append(channel.name)
                 logger.error("Failed to delete channel '%s': %s", channel.name, e)
 

@@ -77,6 +77,8 @@ class ErrorView(BaseView):
 
     def __init__(self, title: str, description: str, timeout=30):
         super().__init__(timeout=timeout)
+        self.title = title
+        self.description = description
 
         close_button = Button(
             label="❌ Close", style=discord.ButtonStyle.secondary, custom_id="close"

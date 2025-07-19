@@ -126,7 +126,7 @@ def parse_category_config(yaml_path: str) -> dict:
         with open(yaml_path, "r", encoding="utf-8") as file:
             category_config = yaml.safe_load(file)
     except yaml.YAMLError as e:
-        raise ValueError(f"Invalid YAML format: {e}")
+        raise ValueError(f"Invalid YAML format: {e}") from e
 
     # Validate required fields
     required_fields = ["name", "type", "channels"]
@@ -168,10 +168,9 @@ async def create_channel_by_type(
 
     if channel_type == "text":
         return await guild.create_text_channel(**channel_kwargs)
-    elif channel_type == "voice":
+    if channel_type == "voice":
         return await guild.create_voice_channel(**channel_kwargs)
-    else:
-        return None
+    return None
 
 
 def check_channel_exists(

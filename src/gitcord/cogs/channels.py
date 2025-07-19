@@ -184,7 +184,7 @@ class Channels(BaseCog):
 
                         yaml_channel_names.add(channel_config["name"])
 
-                    except Exception as e:
+                    except (ValueError, FileNotFoundError, yaml.YAMLError) as e:
                         self.logger.error("Failed to create channel '%s': %s", channel_name, e)
                         continue
 
@@ -282,7 +282,9 @@ class Channels(BaseCog):
                         )
                         continue
 
-                except Exception as e:
+                except (
+                    ValueError, FileNotFoundError, discord.Forbidden, discord.HTTPException
+                ) as e:
                     self.logger.error("Failed to create channel '%s': %s", channel_name, e)
                     continue
 
@@ -305,7 +307,7 @@ class Channels(BaseCog):
                 0,  # extra
             )
 
-        except Exception as e:  # pylint: disable=broad-except
+        except (discord.DiscordException, OSError) as e:
             self.logger.error("Unexpected error in createcategory command: %s", e)
             await self.send_error(
                 ctx, "❌ Unexpected Error", f"An unexpected error occurred: {str(e)}"
@@ -391,7 +393,7 @@ class Channels(BaseCog):
                         )
                         channel_config = parse_channel_config(channel_yaml_path)
                         yaml_channel_names.add(channel_config["name"])
-                    except Exception as e:
+                    except (ValueError, FileNotFoundError) as e:
                         self.logger.error(
                             "Failed to parse channel '%s' from YAML: %s",
                             channel_name,
@@ -420,7 +422,7 @@ class Channels(BaseCog):
                             existing_category.position,
                             category_config.get("position", 0),
                         )
-                    except Exception as e:
+                    except (discord.Forbidden, discord.HTTPException) as e:
                         self.logger.error("Failed to update category position: %s", e)
 
                 # Process channels in the category
@@ -474,7 +476,7 @@ class Channels(BaseCog):
                                         channel_config["name"],
                                         category_config["name"],
                                     )
-                                except Exception as e:
+                                except (discord.Forbidden, discord.HTTPException) as e:
                                     self.logger.error(
                                         "Failed to update channel '%s': %s",
                                         channel_config["name"],
@@ -527,13 +529,17 @@ class Channels(BaseCog):
                                     channel_config["name"],
                                     category_config["name"],
                                 )
-                            except Exception as e:
+                            except (
+                                ValueError, FileNotFoundError, discord.Forbidden, discord.HTTPException
+                            ) as e:
                                 self.logger.error(
                                     "Failed to create channel '%s': %s", channel_name, e
                                 )
                                 skipped_channels.append(channel_config["name"])
 
-                    except Exception as e:
+                    except (
+                        ValueError, FileNotFoundError, discord.Forbidden, discord.HTTPException
+                    ) as e:
                         self.logger.error("Failed to process channel '%s': %s", channel_name, e)
                         skipped_channels.append(channel_name)
                         continue
@@ -567,7 +573,11 @@ class Channels(BaseCog):
                     value=str(len(skipped_channels)),
                     inline=True,
                 )
-                embed.add_field(name="Extra Channels", value=str(len(extra_channels)), inline=True)
+                embed.add_field(
+                    name="Extra Channels",
+                    value=str(len(extra_channels)),
+                    inline=True,
+                )
 
                 if created_channels:
                     channel_list = "\n".join(
@@ -593,7 +603,9 @@ class Channels(BaseCog):
 
                 # Add delete button if there are extra channels
                 if extra_channels:
-                    delete_view = DeleteExtraChannelsView(extra_channels, existing_category.name)
+                    delete_view = DeleteExtraChannelsView(
+                        extra_channels, existing_category.name
+                    )
                     await interaction.followup.send(embed=embed, view=delete_view)
                 else:
                     await interaction.followup.send(embed=embed)
@@ -657,9 +669,13 @@ class Channels(BaseCog):
 
                     # Create the channel based on type
                     if channel_config["type"].lower() == "text":
-                        new_channel = await interaction.guild.create_text_channel(**channel_kwargs)
+                        new_channel = await interaction.guild.create_text_channel(
+                            **channel_kwargs
+                        )
                     elif channel_config["type"].lower() == "voice":
-                        new_channel = await interaction.guild.create_voice_channel(**channel_kwargs)
+                        new_channel = await interaction.guild.create_voice_channel(
+                            **channel_kwargs
+                        )
                     else:
                         self.logger.warning(
                             "Skipping channel '%s': Invalid type '%s'",
@@ -675,7 +691,9 @@ class Channels(BaseCog):
                         category_config["name"],
                     )
 
-                except Exception as e:
+                except (
+                    ValueError, FileNotFoundError, discord.Forbidden, discord.HTTPException
+                ) as e:
                     self.logger.error("Failed to create channel '%s': %s", channel_name, e)
                     continue
 
@@ -726,7 +744,7 @@ class Channels(BaseCog):
             )
             await interaction.followup.send(embed=embed)
             self.logger.error("Discord HTTP error in createcategory slash command: %s", e)
-        except Exception as e:  # pylint: disable=broad-except
+        except (discord.DiscordException, OSError) as e:
             embed = create_embed(
                 title="❌ Unexpected Error",
                 description=f"An unexpected error occurred: {str(e)}",

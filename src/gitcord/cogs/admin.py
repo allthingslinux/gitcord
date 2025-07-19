@@ -81,7 +81,7 @@ class Admin(BaseCog):
             await self.send_error(
                 ctx, "❌ Fetch Error", f"Failed to fetch content from the URL: {str(e)}"
             )
-        except Exception as e:  # pylint: disable=broad-except
+        except (discord.DiscordException, OSError) as e:
             self.logger.error("Error in fetchurl command: %s", e)
             await self.send_error(
                 ctx, "❌ Unexpected Error", f"An unexpected error occurred: {str(e)}"
@@ -122,7 +122,7 @@ class Admin(BaseCog):
                 "❌ Fetch Error",
                 f"Failed to fetch content from the URL: {str(e)}",
             )
-        except Exception as e:  # pylint: disable=broad-except
+        except (discord.DiscordException, OSError) as e:
             self.logger.error("Error in fetchurl command: %s", e)
             await self.send_interaction_error(
                 interaction,
@@ -143,7 +143,7 @@ class Admin(BaseCog):
                 len(synced),
                 interaction.guild.name if interaction.guild else "N/A",
             )
-        except Exception as e:
+        except (discord.DiscordException, OSError) as e:
             self.logger.error("Failed to sync commands: %s", e)
             await interaction.followup.send(f"Failed to sync commands: {e}", ephemeral=True)
 
@@ -170,7 +170,7 @@ class Admin(BaseCog):
                 len(synced),
                 ctx.guild.name if ctx.guild else "N/A",
             )
-        except Exception as e:
+        except (discord.DiscordException, OSError) as e:
             self.logger.error("Failed to sync commands via prefix command: %s", e)
             await self.send_error(ctx, "❌ Sync Failed", f"Failed to sync commands: {e}")
 
