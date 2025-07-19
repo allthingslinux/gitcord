@@ -1,0 +1,18 @@
+            - name: ruff-action
+  # You may pin to the exact commit or the version.
+  # uses: astral-sh/ruff-action@0c50076f12c38c3d0115b7b519b54a91cb9cf0ad
+  uses: astral-sh/ruff-action@v3.5.0
+  with:
+    # Arguments passed to Ruff. Use `ruff --help` to see available options. Defaults to `check`.
+    args: # optional, default is check
+    # Source to run Ruff. Defaults to the current directory.
+    src: # optional, default is ${{ github.workspace }}
+    # The version of Ruff to use, e.g., `0.6.0` Defaults to the version in pyproject.toml or 'latest'.
+    version: # optional, default is 
+    # Path to a pyproject.toml or requirements.txt file to read the version from.
+    version-file: # optional
+    # The checksum of the ruff version to install
+    checksum: # optional
+    # Used to increase the rate limit when retrieving versions and downloading ruff.
+    github-token: # optional, default is ${{ github.token }}
+          
