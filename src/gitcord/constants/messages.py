@@ -7,7 +7,9 @@ ERR_PERMISSION_DENIED = "You do not have the required permission to use this com
 ERR_FILE_NOT_FOUND = "YAML file not found at: {path}"
 ERR_INVALID_YAML = "Failed to parse YAML file: {error}"
 ERR_INVALID_CONFIG = "Missing required field: {field}"
-ERR_INVALID_CHANNEL_TYPE = "Channel type '{type}' is not supported. Use 'text' or 'voice'."
+ERR_INVALID_CHANNEL_TYPE = (
+    "Channel type '{type}' is not supported. Use 'text' or 'voice'."
+)
 ERR_DISCORD_API = "Discord API error: {error}"
 ERR_UNEXPECTED = "An unexpected error occurred: {error}"
 ERR_NO_CONTENT_FOUND = "No readable text content was found on the provided URL."

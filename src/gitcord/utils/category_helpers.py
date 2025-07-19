@@ -16,6 +16,7 @@ from ..views import DeleteExtraChannelsView
 @dataclass
 class CategoryResult:
     """Result of category processing operations."""
+
     created_channels: List[discord.abc.GuildChannel]
     updated_channels: List[discord.abc.GuildChannel]
     skipped_channels: List[str]
@@ -163,7 +164,9 @@ async def _update_existing_channel(
     if channel_updated:
         try:
             # Type check to ensure we can edit the channel
-            if isinstance(existing_channel, (discord.TextChannel, discord.VoiceChannel)):
+            if isinstance(
+                existing_channel, (discord.TextChannel, discord.VoiceChannel)
+            ):
                 await existing_channel.edit(**update_kwargs)
                 logger.info(
                     "Updated channel '%s' in category '%s'",
@@ -282,7 +285,9 @@ def create_category_result_embed(
         value=str(len(result.skipped_channels)),
         inline=True,
     )
-    embed.add_field(name="Extra Channels", value=str(len(result.extra_channels)), inline=True)
+    embed.add_field(
+        name="Extra Channels", value=str(len(result.extra_channels)), inline=True
+    )
 
     if result.created_channels:
         channel_list = "\n".join(

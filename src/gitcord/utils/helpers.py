@@ -187,7 +187,9 @@ def create_error_embed(title: str, description: str) -> discord.Embed:
 
 def create_success_embed(title: str, description: str) -> discord.Embed:
     """Create a standardized success embed."""
-    return create_embed(title=title, description=description, color=discord.Color.green())
+    return create_embed(
+        title=title, description=description, color=discord.Color.green()
+    )
 
 
 def create_channel_list_embed(
@@ -208,13 +210,17 @@ def create_channel_list_embed(
     )
 
     if created_channels:
-        channel_list = "\n".join([f"• {channel.mention}" for channel in created_channels])
+        channel_list = "\n".join(
+            [f"• {channel.mention}" for channel in created_channels]
+        )
         embed.add_field(name="Created Channels", value=channel_list, inline=False)
 
     return embed
 
 
-async def handle_command_error(ctx: commands.Context, error: commands.CommandError, logger) -> None:
+async def handle_command_error(
+    ctx: commands.Context, error: commands.CommandError, logger
+) -> None:
     """Handle common command errors."""
     if isinstance(error, commands.MissingPermissions):
         embed = create_error_embed(
@@ -230,11 +236,15 @@ async def handle_command_error(ctx: commands.Context, error: commands.CommandErr
         await ctx.send(embed=embed)
         logger.error("Discord permission error in command")
     elif isinstance(error, discord.HTTPException):
-        embed = create_error_embed("❌ Discord Error", f"A Discord error occurred: {error}")
+        embed = create_error_embed(
+            "❌ Discord Error", f"A Discord error occurred: {error}"
+        )
         await ctx.send(embed=embed)
         logger.error(f"Discord HTTP error in command: {error}")
     else:
-        embed = create_error_embed("❌ Unexpected Error", f"An unexpected error occurred: {error}")
+        embed = create_error_embed(
+            "❌ Unexpected Error", f"An unexpected error occurred: {error}"
+        )
         await ctx.send(embed=embed)
         logger.error(f"Unexpected error in command: {error}")
 
@@ -251,7 +261,9 @@ async def handle_interaction_error(
         await interaction.followup.send(embed=embed)
         logger.error("Discord permission error in interaction")
     elif isinstance(error, discord.HTTPException):
-        embed = create_error_embed("❌ Discord Error", f"A Discord error occurred: {error}")
+        embed = create_error_embed(
+            "❌ Discord Error", f"A Discord error occurred: {error}"
+        )
         await interaction.followup.send(embed=embed)
         logger.error(f"Discord HTTP error in interaction: {error}")
     else:

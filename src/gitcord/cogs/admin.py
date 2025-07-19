@@ -87,7 +87,9 @@ class Admin(BaseCog):
                 ctx, "❌ Unexpected Error", f"An unexpected error occurred: {str(e)}"
             )
 
-    @app_commands.command(name="fetchurl", description="Fetch and display text content from a URL")
+    @app_commands.command(
+        name="fetchurl", description="Fetch and display text content from a URL"
+    )
     @app_commands.describe(url="The URL to fetch text content from")
     @app_commands.checks.has_permissions(administrator=True)
     async def fetchurl(self, interaction: discord.Interaction, url: str) -> None:
@@ -130,14 +132,18 @@ class Admin(BaseCog):
                 f"An unexpected error occurred: {str(e)}",
             )
 
-    @app_commands.command(name="synccommands", description="Manually sync slash commands")
+    @app_commands.command(
+        name="synccommands", description="Manually sync slash commands"
+    )
     @app_commands.checks.has_permissions(administrator=True)
     async def synccommands(self, interaction: discord.Interaction) -> None:
         """Synchronize application commands for this guild."""
         await interaction.response.defer(thinking=True, ephemeral=True)
         try:
             synced = await self.bot.tree.sync(guild=interaction.guild)
-            await interaction.followup.send(f"Synced {len(synced)} command(s).", ephemeral=True)
+            await interaction.followup.send(
+                f"Synced {len(synced)} command(s).", ephemeral=True
+            )
             self.logger.info(
                 "Manually synced %d command(s) in guild: %s",
                 len(synced),
@@ -145,7 +151,9 @@ class Admin(BaseCog):
             )
         except (discord.DiscordException, OSError) as e:
             self.logger.error("Failed to sync commands: %s", e)
-            await interaction.followup.send(f"Failed to sync commands: {e}", ephemeral=True)
+            await interaction.followup.send(
+                f"Failed to sync commands: {e}", ephemeral=True
+            )
 
     @commands.command(name="synccommands")
     @commands.has_permissions(administrator=True)
@@ -172,7 +180,9 @@ class Admin(BaseCog):
             )
         except (discord.DiscordException, OSError) as e:
             self.logger.error("Failed to sync commands via prefix command: %s", e)
-            await self.send_error(ctx, "❌ Sync Failed", f"Failed to sync commands: {e}")
+            await self.send_error(
+                ctx, "❌ Sync Failed", f"Failed to sync commands: {e}"
+            )
 
 
 async def setup(bot: commands.Bot) -> None:

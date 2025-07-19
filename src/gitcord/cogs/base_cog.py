@@ -22,7 +22,9 @@ class BaseCog(commands.Cog):
         self.bot = bot
         self.logger = logging.getLogger(f"gitcord.{self.__class__.__name__.lower()}")
 
-    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError) -> None:
+    async def cog_command_error(
+        self, ctx: commands.Context, error: commands.CommandError
+    ) -> None:
         """Handle errors for all commands in this cog."""
         await handle_command_error(ctx, error, self.logger)
 
@@ -42,12 +44,16 @@ class BaseCog(commands.Cog):
         """Create a standardized success embed."""
         return create_success_embed(title, description)
 
-    async def send_error(self, ctx: commands.Context, title: str, description: str) -> None:
+    async def send_error(
+        self, ctx: commands.Context, title: str, description: str
+    ) -> None:
         """Send an error embed."""
         embed = self.create_error_embed(title, description)
         await ctx.send(embed=embed)
 
-    async def send_success(self, ctx: commands.Context, title: str, description: str) -> None:
+    async def send_success(
+        self, ctx: commands.Context, title: str, description: str
+    ) -> None:
         """Send a success embed."""
         embed = self.create_success_embed(title, description)
         await ctx.send(embed=embed)
