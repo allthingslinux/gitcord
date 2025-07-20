@@ -1,0 +1,18 @@
+[book]
+authors = ["GitCord Team"]
+language = "en"
+multilingual = false
+src = "src"
+title = "GitCord Documentation"
+
+[output.html]
+git-repository-url = "https://github.com/your-username/gitcord"
+git-repository-icon = "fa-github"
+site-url = "/"
+git-repository-edit-url = "https://github.com/your-username/gitcord/edit/main/docs/src/"
+additional-css = ["custom.css"]
+additional-js = ["custom.js"]
+
+[output.html.fold]
+enable = true
+level = 1
