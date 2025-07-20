@@ -35,16 +35,20 @@ class ConfirmationView(BaseView):
         super().__init__(timeout=timeout)
         self.title = title
         self.description = description
-        self.result = None
+        self.result: bool | None = None
 
         # Add confirm and cancel buttons
-        confirm_button = Button(
-            label="✅ Confirm", style=discord.ButtonStyle.success, custom_id="confirm"
+        confirm_button: Button = Button(
+            label="✅ Confirm",
+            style=discord.ButtonStyle.success,
+            custom_id="confirm"
         )
         confirm_button.callback = self.confirm_callback
 
-        cancel_button = Button(
-            label="❌ Cancel", style=discord.ButtonStyle.secondary, custom_id="cancel"
+        cancel_button: Button = Button(
+            label="❌ Cancel",
+            style=discord.ButtonStyle.secondary,
+            custom_id="cancel"
         )
         cancel_button.callback = self.cancel_callback
 
@@ -80,7 +84,7 @@ class ErrorView(BaseView):
         self.title = title
         self.description = description
 
-        close_button = Button(
+        close_button: Button = Button(
             label="❌ Close", style=discord.ButtonStyle.secondary, custom_id="close"
         )
         close_button.callback = self.close_callback
@@ -99,7 +103,7 @@ class LoadingView(BaseView):
         super().__init__(timeout=timeout)
 
         # Create a disabled button to show loading state
-        loading_button = Button(
+        loading_button: Button = Button(
             label="⏳ " + message,
             style=discord.ButtonStyle.secondary,
             disabled=True,

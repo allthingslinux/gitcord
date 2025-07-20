@@ -40,12 +40,25 @@ async def process_existing_category(
     Returns:
         CategoryResult with processing results
     """
-    updated_channels = []
-    created_channels = []
-    skipped_channels = []
-    extra_channels = []
+    yaml_channel_names = _get_yaml_channel_names(category_config)
+    extra_channels = _find_extra_channels(existing_category, yaml_channel_names, category_config["name"])
+    category_updated = await _update_category_position(existing_category, category_config)
+    
+    created_channels, updated_channels, skipped_channels = await _process_category_channels(
+        guild, existing_category, category_config
+    )
 
-    # Get all channels that should exist according to YAML
+    return CategoryResult(
+        created_channels=created_channels,
+        updated_channels=updated_channels,
+        skipped_channels=skipped_channels,
+        extra_channels=extra_channels,
+        category_updated=category_updated,
+    )
+
+
+def _get_yaml_channel_names(category_config: dict) -> set:
+    """Get set of channel names from YAML configuration."""
     yaml_channel_names = set()
     for channel_name in category_config["channels"]:
         try:
@@ -58,48 +71,67 @@ async def process_existing_category(
                 channel_name,
                 e,
             )
+    return yaml_channel_names
 
-    # Check for channels that exist in Discord but not in YAML
+
+def _find_extra_channels(
+    existing_category: discord.CategoryChannel,
+    yaml_channel_names: set,
+    category_name: str
+) -> List[discord.abc.GuildChannel]:
+    """Find channels that exist in Discord but not in YAML."""
+    extra_channels = []
     for existing_channel in existing_category.channels:
         if existing_channel.name not in yaml_channel_names:
             extra_channels.append(existing_channel)
             logger.info(
                 "Found extra channel '%s' in category '%s' (not in YAML)",
                 existing_channel.name,
-                category_config["name"],
+                category_name,
             )
+    return extra_channels
 
-    # Check for category position differences
-    category_updated = False
+
+async def _update_category_position(
+    existing_category: discord.CategoryChannel,
+    category_config: dict
+) -> bool:
+    """Update category position if needed."""
     if existing_category.position != category_config.get("position", 0):
         try:
             await existing_category.edit(position=category_config.get("position", 0))
-            category_updated = True
             logger.info(
                 "Updated category '%s' position from %d to %d",
                 category_config["name"],
                 existing_category.position,
                 category_config.get("position", 0),
             )
+            return True
         except (discord.Forbidden, discord.HTTPException) as e:
             logger.error("Failed to update category position: %s", e)
+    return False
 
-    # Process channels in the category
+
+async def _process_category_channels(
+    guild: discord.Guild,
+    existing_category: discord.CategoryChannel,
+    category_config: dict,
+) -> tuple[List[discord.abc.GuildChannel], List[discord.abc.GuildChannel], List[str]]:
+    """Process channels in the category."""
+    created_channels = []
+    updated_channels = []
+    skipped_channels = []
+
     for channel_name in category_config["channels"]:
         try:
-            # Construct path to individual channel YAML file
             channel_yaml_path = f"{TEMPLATE_DIR}/{channel_name}.yaml"
-
-            # Parse individual channel configuration
             channel_config = parse_channel_config(channel_yaml_path)
 
-            # Check if channel already exists in the category
             existing_channel = discord.utils.get(
                 existing_category.channels, name=channel_config["name"]
             )
 
             if existing_channel:
-                # Channel exists, check for differences and update
                 channel_updated = await _update_existing_channel(
                     existing_channel, channel_config, category_config["name"]
                 )
@@ -108,7 +140,6 @@ async def process_existing_category(
                 else:
                     skipped_channels.append(channel_config["name"])
             else:
-                # Channel doesn't exist, create it
                 new_channel = await _create_channel_in_category(
                     guild, channel_config, existing_category, category_config["name"]
                 )
@@ -122,13 +153,7 @@ async def process_existing_category(
                 e,
             )
 
-    return CategoryResult(
-        created_channels=created_channels,
-        updated_channels=updated_channels,
-        skipped_channels=skipped_channels,
-        extra_channels=extra_channels,
-        category_updated=category_updated,
-    )
+    return created_channels, updated_channels, skipped_channels
 
 
 async def _update_existing_channel(

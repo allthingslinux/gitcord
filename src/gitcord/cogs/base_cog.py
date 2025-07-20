@@ -23,10 +23,14 @@ class BaseCog(commands.Cog):
         self.logger = logging.getLogger(f"gitcord.{self.__class__.__name__.lower()}")
 
     async def cog_command_error(
-        self, ctx: commands.Context, error: commands.CommandError
+        self, ctx: commands.Context, error: Exception
     ) -> None:
         """Handle errors for all commands in this cog."""
-        await handle_command_error(ctx, error, self.logger)
+        if isinstance(error, commands.CommandError):
+            await handle_command_error(ctx, error, self.logger)
+        else:
+            # Handle non-CommandError exceptions
+            await self.send_error(ctx, "❌ Error", f"An unexpected error occurred: {str(error)}")
 
     async def cog_app_command_error(
         self,

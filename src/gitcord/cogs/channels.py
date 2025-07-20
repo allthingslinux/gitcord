@@ -3,8 +3,9 @@ Channel management commands cog for GitCord bot.
 Contains commands for creating and managing channels and categories.
 """
 
-import yaml
+from typing import Optional
 
+import yaml
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -82,6 +83,215 @@ class Channels(BaseCog):
             ctx.author,
         )
 
+    async def _process_existing_category_channels(
+        self,
+        ctx: commands.Context,
+        existing_category: discord.CategoryChannel,
+        category_config: dict
+    ) -> tuple[list, list, list, list]:
+        """Process channels in an existing category."""
+        updated_channels = []
+        created_channels = []
+        skipped_channels = []
+        extra_channels = []
+        yaml_channel_names = set()
+
+        if not ctx.guild:
+            return created_channels, updated_channels, skipped_channels, extra_channels
+
+        for channel_name in category_config["channels"]:
+            try:
+                channel_yaml_path = (
+                    f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                )
+                channel_config = parse_channel_config(channel_yaml_path)
+
+                existing_channel = check_channel_exists(
+                    existing_category, channel_config["name"]
+                )
+
+                if existing_channel:
+                    if await self._update_existing_channel(existing_channel, channel_config):
+                        updated_channels.append(existing_channel)
+                    else:
+                        skipped_channels.append(channel_config["name"])
+                else:
+                    new_channel = await self._create_channel_in_category(
+                        ctx.guild, channel_config, existing_category
+                    )
+                    if new_channel:
+                        created_channels.append(new_channel)
+
+                yaml_channel_names.add(channel_config["name"])
+
+            except (ValueError, FileNotFoundError, yaml.YAMLError) as e:
+                self.logger.error(
+                    "Failed to create channel '%s': %s", channel_name, e
+                )
+                continue
+
+        # Find extra channels
+        for channel in existing_category.channels:
+            if channel.name not in yaml_channel_names:
+                extra_channels.append(channel)
+
+        return created_channels, updated_channels, skipped_channels, extra_channels
+
+    async def _update_existing_channel(
+        self, existing_channel: discord.abc.GuildChannel, channel_config: dict
+    ) -> bool:
+        """Update an existing channel if needed."""
+        channel_updated = False
+        update_kwargs = {}
+
+        # Check if it's a text channel for topic
+        if isinstance(existing_channel, discord.TextChannel):
+            if existing_channel.topic != channel_config.get("topic", ""):
+                update_kwargs["topic"] = channel_config.get("topic", "")
+                channel_updated = True
+
+        # Check NSFW for text and voice channels
+        if isinstance(existing_channel, (discord.TextChannel, discord.VoiceChannel)):
+            if existing_channel.nsfw != channel_config.get("nsfw", False):
+                update_kwargs["nsfw"] = channel_config.get("nsfw", False)
+                channel_updated = True
+
+        # Check position for all channel types
+        if "position" in channel_config and hasattr(existing_channel, "position"):
+            if existing_channel.position != channel_config["position"]:
+                update_kwargs["position"] = channel_config["position"]
+                channel_updated = True
+
+        if not channel_updated:
+            return False
+
+        # Type check to ensure we can edit the channel
+        if isinstance(existing_channel, (discord.TextChannel, discord.VoiceChannel)):
+            await existing_channel.edit(**update_kwargs)
+            self.logger.info(
+                "Channel '%s' updated in category",
+                channel_config["name"],
+            )
+            return True
+        self.logger.warning(
+            "Cannot edit channel '%s' of type %s",
+            channel_config["name"],
+            type(existing_channel).__name__,
+        )
+        return False
+
+    async def _create_channel_in_category(
+        self, guild: discord.Guild, channel_config: dict, category: discord.CategoryChannel
+    ) -> Optional[discord.abc.GuildChannel]:
+        """Create a new channel in the category."""
+        channel_kwargs = create_channel_kwargs(channel_config, category)
+        new_channel = await create_channel_by_type(guild, channel_config, channel_kwargs)
+
+        if new_channel:
+            self.logger.info(
+                "Channel '%s' created successfully in category",
+                channel_config["name"],
+            )
+            return new_channel
+        else:
+            self.logger.warning(
+                "Skipping channel '%s': Invalid type '%s'",
+                channel_config["name"],
+                channel_config["type"],
+            )
+            return None
+
+    async def _handle_existing_category(
+        self, 
+        ctx: commands.Context, 
+        existing_category: discord.CategoryChannel, 
+        category_config: dict
+    ) -> None:
+        """Handle processing of an existing category."""
+        created_channels, updated_channels, skipped_channels, extra_channels = (
+            await self._process_existing_category_channels(ctx, existing_category, category_config)
+        )
+
+        embed = create_channel_list_embed(
+            "✅ Category Updated",
+            created_channels,
+            len(category_config["channels"]),
+            category_config["name"],
+        )
+
+        if updated_channels:
+            updated_list = "\n".join([f"• {channel.mention}" for channel in updated_channels])
+            embed.add_field(name="Updated Channels", value=updated_list, inline=False)
+
+        if skipped_channels:
+            skipped_list = "\n".join([f"• {name}" for name in skipped_channels])
+            embed.add_field(name="Skipped Channels", value=skipped_list, inline=False)
+
+        if extra_channels:
+            extra_list = "\n".join([f"• {channel.mention}" for channel in extra_channels])
+            embed.add_field(name="Extra Channels", value=extra_list, inline=False)
+            embed.add_field(
+                name="Action Required",
+                value="Use the button below to delete extra channels if needed.",
+                inline=False,
+            )
+            view = DeleteExtraChannelsView(extra_channels, self.logger)
+            await ctx.send(embed=embed, view=view)
+        else:
+            await ctx.send(embed=embed)
+
+        self.logger.info(
+            "Category '%s' processed: %d created, %d updated, %d skipped, %d extra",
+            category_config["name"],
+            len(created_channels),
+            len(updated_channels),
+            len(skipped_channels),
+            len(extra_channels),
+        )
+
+    async def _create_new_category(self, ctx: commands.Context, category_config: dict) -> None:
+        """Create a new category with channels."""
+        category_kwargs = {
+            "name": category_config["name"],
+            "position": category_config.get("position", 0),
+        }
+        new_category = await ctx.guild.create_category(**category_kwargs)
+        created_channels = []
+
+        for channel_name in category_config["channels"]:
+            try:
+                channel_yaml_path = (
+                    f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                )
+                channel_config = parse_channel_config(channel_yaml_path)
+
+                existing_channel = check_channel_exists(new_category, channel_config["name"])
+                if existing_channel:
+                    self.logger.warning(
+                        "Channel '%s' already exists in category '%s', skipping",
+                        channel_config["name"],
+                        category_config["name"],
+                    )
+                    continue
+
+                new_channel = await self._create_channel_in_category(
+                    ctx.guild, channel_config, new_category
+                )
+                if new_channel:
+                    created_channels.append(new_channel)
+
+            except (ValueError, FileNotFoundError, yaml.YAMLError) as e:
+                self.logger.error("Failed to create channel '%s': %s", channel_name, e)
+                continue
+
+        embed = create_channel_list_embed(
+            "✅ Category Created",
+            created_channels,
+            len(category_config["channels"]),
+            category_config["name"],
+        )
+        await ctx.send(embed=embed)
+
     @commands.command(name="createchannel")
     @commands.has_permissions(manage_channels=True)
     async def createchannel(self, ctx: commands.Context) -> None:
@@ -118,7 +328,9 @@ class Channels(BaseCog):
                 yaml_channel_names = set()
                 for channel_name in category_config["channels"]:
                     try:
-                        channel_yaml_path = f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                        channel_yaml_path = (
+                            f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                        )
                         channel_config = parse_channel_config(channel_yaml_path)
 
                         # Check if channel already exists in the category
@@ -269,7 +481,9 @@ class Channels(BaseCog):
 
             for channel_name in category_config["channels"]:
                 try:
-                    channel_yaml_path = f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                    channel_yaml_path = (
+                        f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                    )
                     channel_config = parse_channel_config(channel_yaml_path)
 
                     # Check if channel already exists in the category
@@ -319,12 +533,33 @@ class Channels(BaseCog):
                     continue
 
             # Create result embed
-            embed = create_channel_list_embed(
-                "✅ Category Created",
-                created_channels,
-                len(category_config["channels"]),
-                category_config["name"],
+            embed = create_embed(
+                title="✅ Category Created",
+                description=f"Successfully created category: **{new_category.name}**",
+                color=discord.Color.green(),
             )
+
+            # Add fields
+            embed.add_field(name="Category Name", value=new_category.name, inline=True)
+            embed.add_field(
+                name="Category Type", value=category_config["type"], inline=True
+            )
+            embed.add_field(
+                name="Position", value=category_config.get("position", 0), inline=True
+            )
+            embed.add_field(
+                name="Channels Created",
+                value=f"{len(created_channels)}/{len(category_config['channels'])}",
+                inline=False,
+            )
+
+            if created_channels:
+                channel_list = "\n".join(
+                    [f"• {channel.mention}" for channel in created_channels]
+                )
+                embed.add_field(
+                    name="Created Channels", value=channel_list, inline=False
+                )
 
             await ctx.send(embed=embed)
 
@@ -418,7 +653,9 @@ class Channels(BaseCog):
                 yaml_channel_names = set()
                 for channel_name in category_config["channels"]:
                     try:
-                        channel_yaml_path = f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                        channel_yaml_path = (
+                            f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                        )
                         channel_config = parse_channel_config(channel_yaml_path)
                         yaml_channel_names.add(channel_config["name"])
                     except (ValueError, FileNotFoundError) as e:
@@ -459,7 +696,9 @@ class Channels(BaseCog):
                 for channel_name in category_config["channels"]:
                     try:
                         # Construct path to individual channel YAML file
-                        channel_yaml_path = f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                        channel_yaml_path = (
+                            f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                        )
 
                         # Parse individual channel configuration
                         channel_config = parse_channel_config(channel_yaml_path)
@@ -700,7 +939,9 @@ class Channels(BaseCog):
             for channel_name in category_config["channels"]:
                 try:
                     # Construct path to individual channel YAML file
-                    channel_yaml_path = f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                    channel_yaml_path = (
+                        f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                    )
 
                     # Parse individual channel configuration
                     channel_config = parse_channel_config(channel_yaml_path)
