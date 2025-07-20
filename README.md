@@ -4,10 +4,10 @@ GitCord is a Discord bot that allows you to manage your Discord server's channel
 
 ## ⚠️ Disclaimer
 
-**This project is currently in early development and does not have any relevant features yet.** The bot exists as a basic framework, but the core functionality described in this README is not yet implemented. The only things that exist are a ping command (/slashping, !ping), and an insecure html url fetching command (!fetchurl)
+**This project is currently in early development and does not have a complete featureset yet.** The bot exists as a basic framework, but some core functionality described in this README is not yet implemented. 
 **Do not run this on servers with untrusted members present. It is not secure yet.**
 
-We have detailed plans and are actively working on bringing these features to life. Code is on the way! Check back soon for updates, or feel free to contribute to help accelerate development.
+We have detailed plans and are actively working on bringing these features to life. Check back soon for updates, or feel free to contribute to help accelerate development.
 
 ## Getting Started
 
@@ -60,3 +60,5 @@ If you encounter any issues or have questions, please open an issue on this GitH
 ---
 
 **Note**: This project is currently in active development. Features and documentation may change or become innacurate as the project evolves. 
+
+Made with ❤️ for your community
