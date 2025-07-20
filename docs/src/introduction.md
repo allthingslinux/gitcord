@@ -30,10 +30,16 @@ Ready to get started? Check out the [Installation Guide](./getting-started/insta
 
 ## Support
 
-- **GitHub**: [GitCord Repository](https://github.com/your-username/gitcord)
+- **GitHub**: [GitCord Repository](https://github.com/evolvewithevan/gitcord)
 - **Issues**: Report bugs and request features on GitHub
 - **Documentation**: This comprehensive guide covers all aspects of GitCord
 
 ## License
 
 GitCord is open source software. See the [LICENSE](../LICENSE) file for details. 
+
+---
+
+<p align="center">
+  <sub>Made with ❤️ by the GitCord Team</sub>
+</p

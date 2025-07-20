@@ -11,7 +11,7 @@ This guide will walk you through installing and setting up GitCord on your Disco
 ## Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/gitcord.git
+git clone https://github.com/evolvewithevan/gitcord.git
 cd gitcord
 ```
 
