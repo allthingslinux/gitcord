@@ -39,16 +39,12 @@ class ConfirmationView(BaseView):
 
         # Add confirm and cancel buttons
         confirm_button: Button = Button(
-            label="✅ Confirm",
-            style=discord.ButtonStyle.success,
-            custom_id="confirm"
+            label="✅ Confirm", style=discord.ButtonStyle.success, custom_id="confirm"
         )
         confirm_button.callback = self.confirm_callback
 
         cancel_button: Button = Button(
-            label="❌ Cancel",
-            style=discord.ButtonStyle.secondary,
-            custom_id="cancel"
+            label="❌ Cancel", style=discord.ButtonStyle.secondary, custom_id="cancel"
         )
         cancel_button.callback = self.cancel_callback
 
