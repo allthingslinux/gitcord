@@ -1,4 +1,4 @@
-# GitCord
+# [GitCord](https://evolvewithevan.github.io/gitcord/troubleshooting/debug-mode.html)
 
 A Discord bot that integrates with GitHub to manage Discord server configurations through version-controlled configuration files.
 
