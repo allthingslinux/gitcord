@@ -9,8 +9,6 @@ import discord
 
 from .helpers import create_embed, parse_channel_config
 from .logger import main_logger as logger
-from ..constants.paths import TEMPLATE_DIR
-from ..views import DeleteExtraChannelsView
 
 
 @dataclass
@@ -66,7 +64,7 @@ def _get_yaml_channel_names(category_config: dict) -> set:
     yaml_channel_names = set()
     for channel_name in category_config["channels"]:
         try:
-            channel_yaml_path = f"{TEMPLATE_DIR}/{channel_name}.yaml"
+            channel_yaml_path = f"{channel_name}.yaml"
             channel_config = parse_channel_config(channel_yaml_path)
             yaml_channel_names.add(channel_config["name"])
         except (ValueError, FileNotFoundError) as e:
@@ -127,7 +125,7 @@ async def _process_category_channels(
 
     for channel_name in category_config["channels"]:
         try:
-            channel_yaml_path = f"{TEMPLATE_DIR}/{channel_name}.yaml"
+            channel_yaml_path = f"{channel_name}.yaml"
             channel_config = parse_channel_config(channel_yaml_path)
 
             existing_channel = discord.utils.get(

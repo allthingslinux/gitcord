@@ -137,6 +137,35 @@ def parse_category_config(yaml_path: str) -> dict:
     return category_config
 
 
+def parse_category_config_from_str(yaml_str: str) -> dict:
+    """Parse and validate category YAML configuration from a string."""
+    import yaml
+    try:
+        category_config = yaml.safe_load(yaml_str)
+    except yaml.YAMLError as e:
+        raise ValueError(f"Invalid YAML format: {e}") from e
+    if category_config is None:
+        raise ValueError("YAML is empty or invalid.")
+    required_fields = ["name", "type", "channels"]
+    for field in required_fields:
+        if field not in category_config:
+            raise ValueError(f"Missing required field: {field}")
+    return category_config
+
+
+def parse_channel_config_from_str(yaml_str: str) -> dict:
+    """Parse and validate channel YAML configuration from a string."""
+    import yaml
+    channel_config = yaml.safe_load(yaml_str)
+    if channel_config is None:
+        raise ValueError("YAML is empty or invalid.")
+    required_fields = ["name", "type"]
+    for field in required_fields:
+        if field not in channel_config:
+            raise ValueError(f"Missing required field: {field}")
+    return channel_config
+
+
 def create_channel_kwargs(
     channel_config: dict, category: Optional[discord.CategoryChannel] = None
 ) -> dict:
