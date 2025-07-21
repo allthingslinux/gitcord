@@ -46,3 +46,5 @@ Thumbs.db
 # Logs
 *.log
 logs/ 
+src/.template_repo
+.gitcord_data/

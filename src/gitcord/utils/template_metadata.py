@@ -1,9 +1,6 @@
 import os
 import json
-
-def get_metadata_file(guild_id):
-    base = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    return os.path.join(base, f".template_source_{guild_id}.json")
+from ..constants.paths import get_metadata_file
 
 def save_metadata(guild_id, data):
     with open(get_metadata_file(guild_id), "w", encoding="utf-8") as f:
