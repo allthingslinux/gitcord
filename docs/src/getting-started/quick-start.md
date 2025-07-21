@@ -1,122 +1,113 @@
 # Quick Start
 
-Get up and running with GitCord in minutes! This guide will show you how to create your first channels using templates.
+Get GitCord working in minutes!
 
-## Prerequisites
+## What You Need
 
-- GitCord bot installed and running (see [Installation](./installation.md))
-- Bot has proper permissions in your Discord server
-- You have administrator permissions in the server
+- GitCord bot running (see [Installation](./installation.md))
+- Bot has permissions in your Discord server
+- You have admin permissions
 
-## Step 1: Create a Simple Channel Template
+## Step 1: Create a Channel
 
-Create a file called `my-channels.yaml` with this content:
+Create a file called `general.yaml`:
 
 ```yaml
 name: general
 type: text
 topic: General discussion for the server
 position: 0
+nsfw: false
 ```
 
-## Step 2: Use the Create Command
+## Step 2: Create the Channel
 
-In your Discord server, use the slash command:
+In your Discord server, use:
 
 ```
-/create-channel
+!createchannel
 ```
 
-Then upload your `my-channels.yaml` file when prompted.
+**Note:** This command uses a fixed file path. You'll need to put your file in the right place.
 
 ## Step 3: Create Multiple Channels
 
-Create a more complex template with multiple channels:
+Create a category file:
 
 ```yaml
+# category.yaml
 name: community
 type: category
+position: 0
+
 channels:
-  - name: general
-    type: text
-    topic: General discussion
-  - name: announcements
-    type: text
-    topic: Important announcements
-  - name: voice-chat
-    type: voice
-    topic: Voice chat room
+  - general
+  - announcements
+  - voice-chat
 ```
 
-Use the same `/create-channel` command with this template.
+Then create channel files for each channel listed.
 
-## Step 4: Explore Built-in Templates
+## Step 4: Create the Category
 
-GitCord comes with pre-built templates. Try:
-
-```
-/templates list
-```
-
-This shows available templates you can use immediately.
-
-## Step 5: Use a Template
-
-To use a built-in template:
+Use:
 
 ```
-/templates use community
+!createcategory
 ```
 
-This creates a community category with general channels.
+Or with a specific path:
 
-## Common Templates
+```
+/createcategory path/to/category.yaml
+```
 
-### Community Template
+## Step 5: Try Basic Commands
+
+```
+!hello          # Get a greeting
+!ping           # Check bot latency
+!help           # Show help information
+```
+
+## Example Templates
+
+### Community Category
 ```yaml
+# category.yaml
 name: community
 type: category
+position: 0
+
 channels:
-  - name: general
-    type: text
-    topic: General discussion
-  - name: announcements
-    type: text
-    topic: Important announcements
-  - name: memes
-    type: text
-    topic: Share your memes here
-  - name: off-topic
-    type: text
-    topic: Off-topic discussions
+  - general
+  - announcements
+  - memes
+  - off-topic
 ```
 
-### Gaming Template
+### Voice Category
 ```yaml
-name: gaming
+# category.yaml
+name: voice-chats
 type: category
+position: 1
+
 channels:
-  - name: general-gaming
-    type: text
-    topic: General gaming discussion
-  - name: voice-chat
-    type: voice
-    topic: Gaming voice chat
-  - name: game-announcements
-    type: text
-    topic: Game updates and announcements
+  - vc1
+  - vc2
 ```
 
 ## Next Steps
 
 - Learn about [Channel Management](../user-guide/channel-management.md)
-- Explore [Configuration](./configuration.md) options
-- Check out [Available Commands](../user-guide/commands.md)
-- Create [Custom Templates](../templates/custom-templates.md)
+- Explore [Categories](../user-guide/categories.md)
+- Check [Available Commands](../user-guide/commands.md)
+- Read about [Permissions](../user-guide/permissions.md)
 
 ## Tips
 
-- Use descriptive channel names and topics
-- Organize channels into categories for better structure
-- Test templates in a private server first
-- Use the `/help` command to see all available options 
+- Use clear, simple names
+- Test your YAML files first
+- Keep backups of your files
+- Use the `!help` command for more options 
