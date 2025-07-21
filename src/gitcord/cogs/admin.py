@@ -14,6 +14,7 @@ import shutil
 from urllib.parse import urlparse
 import re
 import requests
+import subprocess
 
 from .base_cog import BaseCog
 from ..utils.helpers import (
@@ -23,6 +24,8 @@ from ..utils.helpers import (
     parse_channel_config_from_str,
 )
 from ..views.base_views import DeleteExtraObjectsView
+from ..utils import template_metadata
+from ..constants.paths import get_template_repo_dir
 
 
 class Admin(BaseCog):
@@ -85,12 +88,108 @@ class Admin(BaseCog):
                 ctx, "❌ Sync Failed", f"Failed to sync commands: {e}"
             )
 
+    @commands.command(name="git")
+    @commands.has_permissions(administrator=True)
+    async def git_command(self, ctx: commands.Context, *args):
+        """Handle !git clone <url> [-b branch], !git pull, and warn on others."""
+        if not args:
+            await ctx.send("❌ Usage: !git clone <url> [-b branch] or !git pull")
+            return
+        cmd = args[0]
+        guild_id = ctx.guild.id
+        repo_dir = get_template_repo_dir(guild_id)
+        if cmd == "clone":
+            if len(args) < 2:
+                await ctx.send("❌ Usage: !git clone <url> [-b branch]")
+                return
+            url = args[1]
+            branch = "main"
+            if len(args) >= 4 and args[2] == "-b":
+                branch = args[3]
+            # Remove existing repo if present
+            if os.path.exists(repo_dir):
+                shutil.rmtree(repo_dir)
+            os.makedirs(repo_dir, exist_ok=True)
+            try:
+                result = subprocess.run([
+                    "git", "clone", "-b", branch, url, repo_dir
+                ], capture_output=True, text=True, timeout=60)
+                if result.returncode != 0:
+                    await ctx.send(f"❌ git clone failed: {result.stderr}")
+                    return
+                # Save metadata
+                template_metadata.save_metadata(guild_id, {
+                    "url": url,
+                    "branch": branch,
+                    "local_path": repo_dir
+                })
+                await ctx.send(f"✅ Cloned template repo from {url} (branch: {branch}) for this server.")
+            except Exception as e:
+                await ctx.send(f"❌ git clone error: {e}")
+        elif cmd == "pull":
+            meta = template_metadata.load_metadata(guild_id)
+            if not meta or not os.path.exists(meta.get("local_path", "")):
+                await ctx.send("❌ No template repo found for this server. Run !git clone first.")
+                return
+            try:
+                result = subprocess.run([
+                    "git", "pull"
+                ], cwd=meta["local_path"], capture_output=True, text=True, timeout=60)
+                if result.returncode != 0:
+                    await ctx.send(f"❌ git pull failed: {result.stderr}")
+                    return
+                pull_msg = f"✅ git pull successful: {result.stdout}"
+                await ctx.send("🔄 Applying template from local repo after pull...")
+                try:
+                    result_msgs = await self._apply_template_from_dir(ctx.guild, meta["local_path"], ctx=ctx)
+                    for msg in result_msgs:
+                        self.logger.info(f"[git pull apply] {msg}")
+                    await ctx.send(pull_msg + "\n" + "\n".join(result_msgs))
+                except Exception as e:
+                    self.logger.error(f"[git pull apply] Error: {e}", exc_info=True)
+                    await self.send_error(ctx, "❌ Template Error after pull", str(e))
+            except Exception as e:
+                await ctx.send(f"❌ git pull error: {e}")
+        else:
+            await ctx.send("⚠️ Only 'git clone' and 'git pull' are supported for templates.")
+
+    # Patch applytemplate to use local repo if present
+    def _get_template_dir(self, folder=None, guild_id=None):
+        meta = template_metadata.load_metadata(guild_id)
+        if meta and os.path.exists(meta.get("local_path", "")):
+            repo_root = meta["local_path"]
+            if folder:
+                folder_path = os.path.join(repo_root, folder)
+                if os.path.isdir(folder_path):
+                    return folder_path
+                else:
+                    raise ValueError(f"Subfolder '{folder}' not found in local template repo.")
+            return repo_root
+        return None
+
     @commands.command(name="applytemplate")
     @commands.has_permissions(administrator=True)
-    async def applytemplate_prefix(
-        self, ctx: commands.Context, url: str, folder: str = None, branch: str = "main"
-    ) -> None:
-        # Sanitize URL: only allow github.com/*
+    async def applytemplate_prefix(self, ctx: commands.Context, url: str = None, folder: str = None, branch: str = "main"):
+        await ctx.send("⚠️ The !applytemplate command is deprecated. Please use !git clone and !git pull instead.")
+        template_dir = None
+        guild_id = ctx.guild.id
+        if url is None:
+            template_dir = self._get_template_dir(folder, guild_id)
+            if not template_dir:
+                await ctx.send("❌ No local template repo found for this server. Use !git clone or provide a URL.")
+                return
+        if template_dir:
+            await ctx.send("🔄 Applying template from local repo...")
+            try:
+                result_msgs = await self._apply_template_from_dir(ctx.guild, template_dir, ctx=ctx)
+                for msg in result_msgs:
+                    self.logger.info(f"[applytemplate_prefix] {msg}")
+                await ctx.send("\n".join(result_msgs))
+            except Exception as e:
+                self.logger.error(f"[applytemplate_prefix] Error: {e}", exc_info=True)
+                await self.send_error(ctx, "❌ Template Error", str(e))
+            return
+        # Fallback to old logic if URL is provided
         if not re.match(r"^https?://github\.com/[^/]+/[^/]+", url):
             await ctx.send("❌ Only direct github.com repository URLs are supported.")
             return
@@ -114,10 +213,10 @@ class Admin(BaseCog):
             await self.send_error(ctx, "❌ Template Error", str(e))
 
     @app_commands.command(
-        name="applytemplate", description="Apply a Gitcord template from a GitHub URL"
+        name="applytemplate", description="Apply a Gitcord template from a GitHub URL (deprecated, use !git pull)"
     )
     @app_commands.describe(
-        url="GitHub repo/folder URL",
+        url="GitHub repo/folder URL (optional if using !git clone)",
         folder="Subfolder to use (optional)",
         branch="Branch/tag/commit (default: main)",
     )
@@ -125,11 +224,30 @@ class Admin(BaseCog):
     async def applytemplate(
         self,
         interaction: discord.Interaction,
-        url: str,
+        url: str = None,
         folder: str = None,
         branch: str = "main",
     ) -> None:
-        # Sanitize URL: only allow github.com/*
+        await interaction.response.send_message("⚠️ The /applytemplate command is deprecated. Please use !git clone and !git pull instead.", ephemeral=True)
+        template_dir = None
+        guild_id = interaction.guild.id
+        if url is None:
+            template_dir = self._get_template_dir(folder, guild_id)
+            if not template_dir:
+                await interaction.response.send_message("❌ No local template repo found for this server. Use !git clone or provide a URL.", ephemeral=True)
+                return
+        if template_dir:
+            await interaction.response.defer()
+            try:
+                result_msgs = await self._apply_template_from_dir(interaction.guild, template_dir, interaction=interaction)
+                for msg in result_msgs:
+                    self.logger.info(f"[applytemplate_slash] {msg}")
+                await interaction.followup.send("\n".join(result_msgs))
+            except Exception as e:
+                self.logger.error(f"[applytemplate_slash] Error: {e}", exc_info=True)
+                await self.send_interaction_error(interaction, "❌ Template Error", str(e))
+            return
+        # Fallback to old logic if URL is provided
         if not re.match(r"^https?://github\.com/[^/]+/[^/]+", url):
             await interaction.response.send_message("❌ Only direct github.com repository URLs are supported.", ephemeral=True)
             return
