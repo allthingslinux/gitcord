@@ -2,6 +2,9 @@
 
 Get GitCord working in minutes!
 
+> **Note:** These instructions are for the current version of GitCord. Once GitHub integration is implemented, the setup and usage steps will change dramatically. Please check back for updated instructions in future releases.
+
+
 ## What You Need
 
 - GitCord bot running (see [Installation](./installation.md))
