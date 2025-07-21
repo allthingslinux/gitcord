@@ -29,7 +29,7 @@ channels:
 ## How to Use
 
 1. Create a category YAML file
-2. Create channel YAML files for each channel
+2. Create channel YAML files for each channel within the category
 3. Run `!createcategory` or `/createcategory`
 
 ## Examples
