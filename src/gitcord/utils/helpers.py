@@ -140,6 +140,7 @@ def parse_category_config(yaml_path: str) -> dict:
 def parse_category_config_from_str(yaml_str: str) -> dict:
     """Parse and validate category YAML configuration from a string."""
     import yaml
+
     try:
         category_config = yaml.safe_load(yaml_str)
     except yaml.YAMLError as e:
@@ -156,6 +157,7 @@ def parse_category_config_from_str(yaml_str: str) -> dict:
 def parse_channel_config_from_str(yaml_str: str) -> dict:
     """Parse and validate channel YAML configuration from a string."""
     import yaml
+
     channel_config = yaml.safe_load(yaml_str)
     if channel_config is None:
         raise ValueError("YAML is empty or invalid.")

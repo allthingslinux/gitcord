@@ -13,13 +13,15 @@ import tempfile
 import zipfile
 import os
 import shutil
-import requests
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 
 from .base_cog import BaseCog
-from ..utils.helpers import create_embed, clean_webpage_text, parse_category_config_from_str, parse_channel_config_from_str
-from ..cogs.channels import Channels
-from discord.ui import View, Button
+from ..utils.helpers import (
+    create_embed,
+    clean_webpage_text,
+    parse_category_config_from_str,
+    parse_channel_config_from_str,
+)
 from ..views.base_views import DeleteExtraObjectsView
 
 
@@ -196,13 +198,19 @@ class Admin(BaseCog):
 
     @commands.command(name="applytemplate")
     @commands.has_permissions(administrator=True)
-    async def applytemplate_prefix(self, ctx: commands.Context, url: str, folder: str = None, branch: str = "main") -> None:
-        self.logger.info(f"[applytemplate_prefix] User: {ctx.author}, URL: {url}, folder: {folder}, branch: {branch}")
+    async def applytemplate_prefix(
+        self, ctx: commands.Context, url: str, folder: str = None, branch: str = "main"
+    ) -> None:
+        self.logger.info(
+            f"[applytemplate_prefix] User: {ctx.author}, URL: {url}, folder: {folder}, branch: {branch}"
+        )
         await ctx.send("🔄 Downloading and extracting template from GitHub...")
         try:
             temp_dir = self._download_and_extract_github(url, folder, branch)
             self.logger.info(f"[applytemplate_prefix] Extracted to: {temp_dir}")
-            result_msgs = await self._apply_template_from_dir(ctx.guild, temp_dir, ctx=ctx)
+            result_msgs = await self._apply_template_from_dir(
+                ctx.guild, temp_dir, ctx=ctx
+            )
             for msg in result_msgs:
                 self.logger.info(f"[applytemplate_prefix] {msg}")
             await ctx.send("\n".join(result_msgs))
@@ -212,16 +220,32 @@ class Admin(BaseCog):
             self.logger.error(f"[applytemplate_prefix] Error: {e}", exc_info=True)
             await self.send_error(ctx, "❌ Template Error", str(e))
 
-    @app_commands.command(name="applytemplate", description="Apply a Gitcord template from a GitHub URL")
-    @app_commands.describe(url="GitHub repo/folder URL", folder="Subfolder to use (optional)", branch="Branch/tag/commit (default: main)")
+    @app_commands.command(
+        name="applytemplate", description="Apply a Gitcord template from a GitHub URL"
+    )
+    @app_commands.describe(
+        url="GitHub repo/folder URL",
+        folder="Subfolder to use (optional)",
+        branch="Branch/tag/commit (default: main)",
+    )
     @app_commands.checks.has_permissions(administrator=True)
-    async def applytemplate(self, interaction: discord.Interaction, url: str, folder: str = None, branch: str = "main") -> None:
-        self.logger.info(f"[applytemplate_slash] User: {interaction.user}, URL: {url}, folder: {folder}, branch: {branch}")
+    async def applytemplate(
+        self,
+        interaction: discord.Interaction,
+        url: str,
+        folder: str = None,
+        branch: str = "main",
+    ) -> None:
+        self.logger.info(
+            f"[applytemplate_slash] User: {interaction.user}, URL: {url}, folder: {folder}, branch: {branch}"
+        )
         await interaction.response.defer()
         try:
             temp_dir = self._download_and_extract_github(url, folder, branch)
             self.logger.info(f"[applytemplate_slash] Extracted to: {temp_dir}")
-            result_msgs = await self._apply_template_from_dir(interaction.guild, temp_dir, interaction=interaction)
+            result_msgs = await self._apply_template_from_dir(
+                interaction.guild, temp_dir, interaction=interaction
+            )
             for msg in result_msgs:
                 self.logger.info(f"[applytemplate_slash] {msg}")
             await interaction.followup.send("\n".join(result_msgs))
@@ -231,7 +255,9 @@ class Admin(BaseCog):
             self.logger.error(f"[applytemplate_slash] Error: {e}", exc_info=True)
             await self.send_interaction_error(interaction, "❌ Template Error", str(e))
 
-    def _download_and_extract_github(self, url: str, folder: str = None, branch: str = "main") -> str:
+    def _download_and_extract_github(
+        self, url: str, folder: str = None, branch: str = "main"
+    ) -> str:
         """Download a GitHub repo/folder as zip, extract to temp dir, return path."""
         # Parse the URL
         parsed = urlparse(url)
@@ -246,7 +272,9 @@ class Admin(BaseCog):
         # Download zip
         resp = requests.get(zip_url, stream=True, timeout=30)
         if resp.status_code != 200:
-            raise ValueError(f"Failed to download zip from {zip_url} (status {resp.status_code})")
+            raise ValueError(
+                f"Failed to download zip from {zip_url} (status {resp.status_code})"
+            )
         temp_dir = tempfile.mkdtemp(prefix="gitcord-template-")
         zip_path = os.path.join(temp_dir, "repo.zip")
         with open(zip_path, "wb") as f:
@@ -272,7 +300,9 @@ class Admin(BaseCog):
             return folder_path
         return extracted_root
 
-    async def _apply_template_from_dir(self, guild, template_dir, ctx=None, interaction=None):
+    async def _apply_template_from_dir(
+        self, guild, template_dir, ctx=None, interaction=None
+    ):
         result_msgs = []
         template_category_names = set()
         template_channel_names = set()
@@ -282,7 +312,9 @@ class Admin(BaseCog):
         for root, dirs, files in os.walk(template_dir):
             if "category.yaml" in files:
                 cat_path = os.path.join(root, "category.yaml")
-                self.logger.info(f"[apply_template_from_dir] Found category.yaml: {cat_path}")
+                self.logger.info(
+                    f"[apply_template_from_dir] Found category.yaml: {cat_path}"
+                )
                 with open(cat_path, "r", encoding="utf-8") as f:
                     cat_yaml = f.read()
                 try:
@@ -298,12 +330,16 @@ class Admin(BaseCog):
                     template_channel_names.add(ch_name)
                     template_category_channel_pairs.add((category_name, ch_name))
                 # Create or update the category
-                existing_category = discord.utils.get(guild.categories, name=category_name)
+                existing_category = discord.utils.get(
+                    guild.categories, name=category_name
+                )
                 if existing_category:
                     category = existing_category
                     msg = f"ℹ️ Category '{category_name}' already exists. Will update channels."
                 else:
-                    category = await guild.create_category(name=category_name, position=category_config.get("position", 0))
+                    category = await guild.create_category(
+                        name=category_name, position=category_config.get("position", 0)
+                    )
                     msg = f"✅ Created category: {category_name}"
                 self.logger.info(f"[apply_template_from_dir] {msg}")
                 result_msgs.append(msg)
@@ -328,16 +364,32 @@ class Admin(BaseCog):
                         skipped += 1
                         continue
                     # Check if channel exists
-                    existing_channel = discord.utils.get(category.channels, name=channel_config["name"])
+                    existing_channel = discord.utils.get(
+                        category.channels, name=channel_config["name"]
+                    )
                     channel_type = channel_config["type"].lower()
                     if existing_channel:
                         # Update topic/nsfw/position if needed
                         update_kwargs = {}
-                        if channel_type == "text" and hasattr(existing_channel, "topic") and existing_channel.topic != channel_config.get("topic", ""):
+                        if (
+                            channel_type == "text"
+                            and hasattr(existing_channel, "topic")
+                            and existing_channel.topic
+                            != channel_config.get("topic", "")
+                        ):
                             update_kwargs["topic"] = channel_config.get("topic", "")
-                        if channel_type in ("text", "voice") and hasattr(existing_channel, "nsfw") and existing_channel.nsfw != channel_config.get("nsfw", False):
+                        if (
+                            channel_type in ("text", "voice")
+                            and hasattr(existing_channel, "nsfw")
+                            and existing_channel.nsfw
+                            != channel_config.get("nsfw", False)
+                        ):
                             update_kwargs["nsfw"] = channel_config.get("nsfw", False)
-                        if "position" in channel_config and hasattr(existing_channel, "position") and existing_channel.position != channel_config["position"]:
+                        if (
+                            "position" in channel_config
+                            and hasattr(existing_channel, "position")
+                            and existing_channel.position != channel_config["position"]
+                        ):
                             update_kwargs["position"] = channel_config["position"]
                         if update_kwargs:
                             await existing_channel.edit(**update_kwargs)
@@ -350,7 +402,10 @@ class Admin(BaseCog):
                         result_msgs.append(msg)
                     else:
                         # Create new channel
-                        channel_kwargs = {"name": channel_config["name"], "category": category}
+                        channel_kwargs = {
+                            "name": channel_config["name"],
+                            "category": category,
+                        }
                         if "position" in channel_config:
                             channel_kwargs["position"] = channel_config["position"]
                         if channel_type == "text":
@@ -373,12 +428,18 @@ class Admin(BaseCog):
                         result_msgs.append(msg)
                 # After all channels processed, check for extra channels in this category
                 template_channel_names = set(category_config["channels"])
-                extra_channels = [ch for ch in category.channels if ch.name not in template_channel_names]
+                extra_channels = [
+                    ch
+                    for ch in category.channels
+                    if ch.name not in template_channel_names
+                ]
                 if extra_channels:
                     msg = f"⚠️ Extra channels not in template for category '{category_name}': {', '.join(ch.name for ch in extra_channels)}"
                     self.logger.warning(f"[apply_template_from_dir] {msg}")
                     result_msgs.append(msg)
-                    view = DeleteExtraObjectsView(extra_channels, object_type_label='channel')
+                    view = DeleteExtraObjectsView(
+                        extra_channels, object_type_label="channel"
+                    )
                     if interaction:
                         await interaction.followup.send(msg, view=view)
                     elif ctx:
@@ -387,12 +448,16 @@ class Admin(BaseCog):
                 result_msgs.append(summary)
         # After all categories processed, check for extra categories
         existing_category_names = set(cat.name for cat in guild.categories)
-        extra_categories = [cat for cat in guild.categories if cat.name not in template_category_names]
+        extra_categories = [
+            cat for cat in guild.categories if cat.name not in template_category_names
+        ]
         if extra_categories:
             msg = f"⚠️ Extra categories not in template: {', '.join(cat.name for cat in extra_categories)}"
             self.logger.warning(f"[apply_template_from_dir] {msg}")
             result_msgs.append(msg)
-            view = DeleteExtraObjectsView(extra_categories, object_type_label='category')
+            view = DeleteExtraObjectsView(
+                extra_categories, object_type_label="category"
+            )
             if interaction:
                 await interaction.followup.send(msg, view=view)
             elif ctx:
@@ -400,16 +465,21 @@ class Admin(BaseCog):
         # After all categories processed, check for orphan channels
         orphan_channels = []
         for ch in guild.channels:
-            if getattr(ch, 'category', None) is None and isinstance(ch, (discord.TextChannel, discord.VoiceChannel)):
+            if getattr(ch, "category", None) is None and isinstance(
+                ch, (discord.TextChannel, discord.VoiceChannel)
+            ):
                 # If template does not support uncategorized channels, all orphans are extra
                 # If template_uncategorized_channel_names is empty, all orphans are extra
-                if not template_uncategorized_channel_names or ch.name not in template_uncategorized_channel_names:
+                if (
+                    not template_uncategorized_channel_names
+                    or ch.name not in template_uncategorized_channel_names
+                ):
                     orphan_channels.append(ch)
         if orphan_channels:
             msg = f"⚠️ Uncategorized channels not in template: {', '.join(ch.name for ch in orphan_channels)}"
             self.logger.warning(f"[apply_template_from_dir] {msg}")
             result_msgs.append(msg)
-            view = DeleteExtraObjectsView(orphan_channels, object_type_label='channel')
+            view = DeleteExtraObjectsView(orphan_channels, object_type_label="channel")
             if interaction:
                 await interaction.followup.send(msg, view=view)
             elif ctx:
