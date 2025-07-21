@@ -44,7 +44,6 @@ class Help(commands.Cog):
             value="• `!hello` - Get a friendly greeting\n"
             "• `!help` - Show help information and link to the wiki (***YOU ARE HERE***)\n"
             "• `!ping` - Check bot latency\n"
-            "• `!fetchurl <url>` - Fetch content from a URL (Admin only)\n"
             "• `!createchannel` - Create a channel from YAML (Manage Channels)\n"
             "• `!createcategory` - Create a category from YAML (Manage Channels)\n"
             "• `!synccommands` - Sync slash commands (Admin only)",
@@ -54,7 +53,6 @@ class Help(commands.Cog):
         embed.add_field(
             name="⚡ Slash Commands",
             value="• `/slashping` - Check bot latency\n"
-            "• `/fetchurl <url>` - Fetch content from a URL (Admin only)\n"
             "• `/createcategory [yaml_path]` - Create category from YAML (Manage Channels)\n"
             "• `/synccommands` - Sync slash commands (Admin only)",
             inline=False,
@@ -101,7 +99,6 @@ class Help(commands.Cog):
             value="• `!hello` - Get a friendly greeting\n"
             "• `!help` - Show help information and link to the wiki (***YOU ARE HERE***)\n"
             "• `!ping` - Check bot latency\n"
-            "• `!fetchurl <url>` - Fetch content from a URL (Admin only)\n"
             "• `!createchannel` - Create a channel from YAML (Manage Channels)\n"
             "• `!createcategory` - Create a category from YAML (Manage Channels)\n"
             "• `!synccommands` - Sync slash commands (Admin only)",
@@ -111,7 +108,6 @@ class Help(commands.Cog):
         embed.add_field(
             name="⚡ Slash Commands",
             value="• `/slashping` - Check bot latency\n"
-            "• `/fetchurl <url>` - Fetch content from a URL (Admin only)\n"
             "• `/createcategory [yaml_path]` - Create category from YAML (Manage Channels)\n"
             "• `/synccommands` - Sync slash commands (Admin only)",
             inline=False,
