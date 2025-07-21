@@ -10,6 +10,8 @@ import discord
 from .helpers import create_embed, parse_channel_config
 from .logger import main_logger as logger
 
+import requests
+
 
 @dataclass
 class CategoryResult:

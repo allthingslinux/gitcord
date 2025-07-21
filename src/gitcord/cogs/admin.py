@@ -13,6 +13,7 @@ import os
 import shutil
 from urllib.parse import urlparse
 import re
+import requests
 
 from .base_cog import BaseCog
 from ..utils.helpers import (
