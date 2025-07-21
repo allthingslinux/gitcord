@@ -1,14 +1,14 @@
 # Installation
 
-This guide will walk you through installing and setting up GitCord on your Discord server.
+Set up GitCord on your Discord server.
 
-## Prerequisites
+## What You Need
 
 - Python 3.8 or higher
 - A Discord bot token
-- Discord server with appropriate permissions
+- Discord server with admin permissions
 
-## Step 1: Clone the Repository
+## Step 1: Get the Code
 
 ```bash
 git clone https://github.com/evolvewithevan/gitcord.git
@@ -17,7 +17,7 @@ cd gitcord
 
 ## Step 2: Install Dependencies
 
-### Using pip
+### Using pip (Not Recommended)
 
 ```bash
 pip install -r requirements.txt
@@ -36,20 +36,20 @@ uv sync
    cp .env.example .env
    ```
 
-2. Edit the `.env` file with your bot token:
+2. Populate the `.env` file with your bot token:
    ```env
    DISCORD_TOKEN=your_bot_token_here
    ```
 
 ## Step 4: Create Discord Bot
 
-1. Go to the [Discord Developer Portal](https://discord.com/developers/applications)
-2. Click "New Application" and give it a name
-3. Go to the "Bot" section and click "Add Bot"
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
+2. Click "New Application" and name it
+3. Go to "Bot" section and click "Add Bot"
 4. Copy the bot token and add it to your `.env` file
 5. Enable the following bot permissions:
    - Manage Channels
-   - Manage Roles
+   - Manage Roles (Technically not needed until Role Management is implemented)
    - Send Messages
    - Embed Links
    - Use Slash Commands
