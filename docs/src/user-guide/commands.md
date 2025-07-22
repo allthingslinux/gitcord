@@ -29,7 +29,7 @@ Create one channel from a YAML file.
 
 **Permissions:** Manage Channels
 
-**Note:** Uses a fixed file path, This will be changed with the release of 1.X: `/home/user/Projects/gitcord-template/community/off-topic.yaml` 
+**Note:** Now uses dynamic template paths. For servers using the new monolithic template format, this command shows a deprecation warning and suggests using `!git pull` instead. 
 
 ### `!createcategory` / `/createcategory`
 Create a category with multiple channels.

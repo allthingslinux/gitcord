@@ -100,6 +100,114 @@ def format_time_delta(seconds: float) -> str:
     return f"{hours:.1f}h"
 
 
+def parse_monolithic_template(yaml_path: str) -> dict:
+    """Parse and validate the monolithic YAML template file."""
+    if not os.path.exists(yaml_path):
+        raise FileNotFoundError(f"Template file not found at: {yaml_path}")
+
+    try:
+        with open(yaml_path, "r", encoding="utf-8") as file:
+            template_config = yaml.safe_load(file)
+    except yaml.YAMLError as e:
+        raise ValueError(f"Invalid YAML format: {e}") from e
+
+    if template_config is None:
+        raise ValueError("Template file is empty or invalid.")
+
+    # Validate required fields
+    if "categories" not in template_config:
+        raise ValueError("Missing required field: categories")
+
+    if not isinstance(template_config["categories"], list):
+        raise ValueError("categories must be a list")
+
+    # Validate each category
+    for i, category in enumerate(template_config["categories"]):
+        if not isinstance(category, dict):
+            raise ValueError(f"Category {i} must be a dictionary")
+        
+        required_category_fields = ["name", "type"]
+        for field in required_category_fields:
+            if field not in category:
+                raise ValueError(f"Category {i} missing required field: {field}")
+        
+        if "channels" in category:
+            if not isinstance(category["channels"], list):
+                raise ValueError(f"Category {i} channels must be a list")
+            
+            # Validate each channel in the category
+            for j, channel in enumerate(category["channels"]):
+                if not isinstance(channel, dict):
+                    raise ValueError(f"Category {i}, channel {j} must be a dictionary")
+                
+                required_channel_fields = ["name", "type"]
+                for field in required_channel_fields:
+                    if field not in channel:
+                        raise ValueError(f"Category {i}, channel {j} missing required field: {field}")
+
+    return template_config
+
+
+def parse_monolithic_template_from_str(yaml_str: str) -> dict:
+    """Parse and validate monolithic YAML template from a string."""
+    try:
+        template_config = yaml.safe_load(yaml_str)
+    except yaml.YAMLError as e:
+        raise ValueError(f"Invalid YAML format: {e}") from e
+
+    if template_config is None:
+        raise ValueError("Template YAML is empty or invalid.")
+
+    # Validate required fields
+    if "categories" not in template_config:
+        raise ValueError("Missing required field: categories")
+
+    if not isinstance(template_config["categories"], list):
+        raise ValueError("categories must be a list")
+
+    # Validate each category
+    for i, category in enumerate(template_config["categories"]):
+        if not isinstance(category, dict):
+            raise ValueError(f"Category {i} must be a dictionary")
+        
+        required_category_fields = ["name", "type"]
+        for field in required_category_fields:
+            if field not in category:
+                raise ValueError(f"Category {i} missing required field: {field}")
+        
+        if "channels" in category:
+            if not isinstance(category["channels"], list):
+                raise ValueError(f"Category {i} channels must be a list")
+            
+            # Validate each channel in the category
+            for j, channel in enumerate(category["channels"]):
+                if not isinstance(channel, dict):
+                    raise ValueError(f"Category {i}, channel {j} must be a dictionary")
+                
+                required_channel_fields = ["name", "type"]
+                for field in required_channel_fields:
+                    if field not in channel:
+                        raise ValueError(f"Category {i}, channel {j} missing required field: {field}")
+
+    return template_config
+
+
+def get_template_path(guild_id: int) -> Optional[str]:
+    """Get the template path for a guild, looking for template.yaml in the root of the template repo."""
+    from .template_metadata import load_metadata
+    
+    meta = load_metadata(guild_id)
+    if not meta or not os.path.exists(meta.get("local_path", "")):
+        return None
+    
+    template_path = os.path.join(meta["local_path"], "template.yaml")
+    if os.path.exists(template_path):
+        return template_path
+    
+    return None
+
+
+# Legacy functions - kept for backward compatibility during transition
 def parse_channel_config(yaml_path: str) -> dict:
     """Parse and validate the YAML configuration file."""
     if not os.path.exists(yaml_path):

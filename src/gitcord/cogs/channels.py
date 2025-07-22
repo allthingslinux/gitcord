@@ -20,6 +20,7 @@ from ..utils.helpers import (
     create_channel_kwargs,
     create_channel_by_type,
     check_channel_exists,
+    get_template_path,
 )
 from ..utils import template_metadata
 from ..constants.paths import get_template_repo_dir
@@ -47,7 +48,14 @@ class Channels(BaseCog):
         self.logger.info("Channels cog loaded")
 
     def _get_template_path(self, guild_id: int, file_name: str = None, folder: str = None) -> Optional[str]:
-        """Get the template path for a guild, falling back to None if no template repo exists."""
+        """Get the template path for a guild, now looking for monolithic template.yaml first."""
+        
+        # Try the new monolithic template format first
+        template_path = get_template_path(guild_id)
+        if template_path:
+            return template_path
+        
+        # Fall back to legacy format if requested
         meta = template_metadata.load_metadata(guild_id)
         if not meta or not os.path.exists(meta.get("local_path", "")):
             return None
@@ -446,6 +454,14 @@ class Channels(BaseCog):
     @commands.has_permissions(manage_channels=True)
     async def createchannel(self, ctx: commands.Context) -> None:
         """Create a channel based on properties defined in a YAML file."""
+        # Check if we have a monolithic template first
+        template_path = self._get_template_path(ctx.guild.id)
+        if template_path and template_path.endswith("template.yaml"):
+            await self.send_error(ctx, "⚠️ Command Deprecated", 
+                                "This server uses the new monolithic template format. Please use `!git pull` to apply the entire template instead of creating individual channels.")
+            return
+        
+        # Fall back to legacy format
         yaml_path = self._get_template_path(ctx.guild.id, "off-topic.yaml")
         if not yaml_path:
             await self.send_error(ctx, "❌ No Template Repository", 
@@ -462,6 +478,14 @@ class Channels(BaseCog):
             await self.send_error(ctx, "❌ Error", "Guild not found")
             return
 
+        # Check if we have a monolithic template first
+        template_path = self._get_template_path(guild.id)
+        if template_path and template_path.endswith("template.yaml"):
+            await self.send_error(ctx, "⚠️ Command Deprecated", 
+                                "This server uses the new monolithic template format. Please use `!git pull` to apply the entire template instead of creating individual categories.")
+            return
+
+        # Fall back to legacy format
         yaml_path = self._get_template_path(guild.id, "category.yaml")
         if not yaml_path:
             await self.send_error(ctx, "❌ No Template Repository", 
@@ -539,6 +563,18 @@ class Channels(BaseCog):
 
         # Use default path if none provided
         if yaml_path is None:
+            # Check if we have a monolithic template first
+            template_path = self._get_template_path(guild.id)
+            if template_path and template_path.endswith("template.yaml"):
+                embed = create_embed(
+                    title="⚠️ Command Deprecated",
+                    description="This server uses the new monolithic template format. Please use `!git pull` to apply the entire template instead of creating individual categories.",
+                    color=discord.Color.orange(),
+                )
+                await interaction.followup.send(embed=embed)
+                return
+            
+            # Fall back to legacy format
             yaml_path = self._get_template_path(guild.id, "category.yaml")
             if not yaml_path:
                 embed = create_embed(

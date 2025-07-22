@@ -484,6 +484,13 @@ class Admin(BaseCog):
     async def _apply_template_from_dir(
         self, guild, template_dir, ctx=None, interaction=None
     ):
+        """Apply template from directory - now looks for monolithic template.yaml first, falls back to legacy format."""
+        # Try monolithic template format first
+        template_path = os.path.join(template_dir, "template.yaml")
+        if os.path.exists(template_path):
+            return await self._apply_monolithic_template(guild, template_path, ctx, interaction)
+        
+        # Fall back to legacy directory-based format
         result_msgs = []
         template_category_names = set()
         template_channel_names = set()
@@ -669,6 +676,175 @@ class Admin(BaseCog):
             msg = "⚠️ No categories found in template."
             self.logger.warning(f"[apply_template_from_dir] {msg}")
             result_msgs.append(msg)
+        return result_msgs
+
+    async def _apply_monolithic_template(self, guild, template_path, ctx=None, interaction=None):
+        """Apply a monolithic template.yaml file to the guild."""
+        from ..utils.helpers import parse_monolithic_template
+        
+        result_msgs = []
+        template_category_names = set()
+        
+        try:
+            template_config = parse_monolithic_template(template_path)
+        except Exception as e:
+            msg = f"❌ Failed to parse template: {e}"
+            self.logger.error(f"[apply_monolithic_template] {msg}")
+            result_msgs.append(msg)
+            return result_msgs
+        
+        # Log template info if available
+        if "server" in template_config:
+            server_info = template_config["server"]
+            if "name" in server_info:
+                msg = f"📋 Applying template: {server_info['name']}"
+                if "version" in server_info:
+                    msg += f" v{server_info['version']}"
+                self.logger.info(f"[apply_monolithic_template] {msg}")
+                result_msgs.append(msg)
+        
+        # Process each category
+        for category_config in template_config["categories"]:
+            category_name = category_config["name"]
+            template_category_names.add(category_name)
+            
+            # Create or update the category
+            existing_category = discord.utils.get(guild.categories, name=category_name)
+            if existing_category:
+                category = existing_category
+                msg = f"ℹ️ Category '{category_name}' already exists. Will update channels."
+            else:
+                category = await guild.create_category(
+                    name=category_name, position=category_config.get("position", 0)
+                )
+                msg = f"✅ Created category: {category_name}"
+            
+            self.logger.info(f"[apply_monolithic_template] {msg}")
+            result_msgs.append(msg)
+            
+            # Process channels in this category
+            created, updated, skipped = 0, 0, 0
+            template_channel_names = set()
+            
+            channels = category_config.get("channels", [])
+            for channel_config in channels:
+                channel_name = channel_config["name"]
+                template_channel_names.add(channel_name)
+                
+                # Check if channel exists
+                existing_channel = discord.utils.get(category.channels, name=channel_name)
+                channel_type = channel_config["type"].lower()
+                
+                if existing_channel:
+                    # Update topic/nsfw/position if needed
+                    update_kwargs = {}
+                    if (
+                        channel_type == "text"
+                        and hasattr(existing_channel, "topic")
+                        and existing_channel.topic != channel_config.get("topic", "")
+                    ):
+                        update_kwargs["topic"] = channel_config.get("topic", "")
+                    if (
+                        channel_type in ("text", "voice")
+                        and hasattr(existing_channel, "nsfw")
+                        and existing_channel.nsfw != channel_config.get("nsfw", False)
+                    ):
+                        update_kwargs["nsfw"] = channel_config.get("nsfw", False)
+                    if (
+                        "position" in channel_config
+                        and hasattr(existing_channel, "position")
+                        and existing_channel.position != channel_config["position"]
+                    ):
+                        update_kwargs["position"] = channel_config["position"]
+                    
+                    if update_kwargs:
+                        await existing_channel.edit(**update_kwargs)
+                        updated += 1
+                        msg = f"🔄 Updated channel: {existing_channel.name} in {category_name}"
+                    else:
+                        skipped += 1
+                        msg = f"⏭️ Skipped channel (no changes): {existing_channel.name} in {category_name}"
+                    
+                    self.logger.info(f"[apply_monolithic_template] {msg}")
+                    result_msgs.append(msg)
+                else:
+                    # Create new channel
+                    channel_kwargs = {
+                        "name": channel_config["name"],
+                        "category": category,
+                    }
+                    if "position" in channel_config:
+                        channel_kwargs["position"] = channel_config["position"]
+                    
+                    if channel_type == "text":
+                        if "topic" in channel_config:
+                            channel_kwargs["topic"] = channel_config["topic"]
+                        if "nsfw" in channel_config:
+                            channel_kwargs["nsfw"] = channel_config["nsfw"]
+                        await guild.create_text_channel(**channel_kwargs)
+                    elif channel_type == "voice":
+                        await guild.create_voice_channel(**channel_kwargs)
+                    else:
+                        msg = f"❌ Unknown channel type: {channel_type} for {channel_config['name']}"
+                        self.logger.error(f"[apply_monolithic_template] {msg}")
+                        result_msgs.append(msg)
+                        skipped += 1
+                        continue
+                    
+                    created += 1
+                    msg = f"✅ Created channel: {channel_config['name']} in {category_name}"
+                    self.logger.info(f"[apply_monolithic_template] {msg}")
+                    result_msgs.append(msg)
+            
+            # Check for extra channels in this category
+            extra_channels = [
+                ch for ch in category.channels if ch.name not in template_channel_names
+            ]
+            if extra_channels:
+                msg = f"⚠️ Extra channels not in template for category '{category_name}': {', '.join(ch.name for ch in extra_channels)}"
+                self.logger.warning(f"[apply_monolithic_template] {msg}")
+                result_msgs.append(msg)
+                view = DeleteExtraObjectsView(extra_channels, object_type_label="channel")
+                if interaction:
+                    await interaction.followup.send(msg, view=view)
+                elif ctx:
+                    await ctx.send(msg, view=view)
+            
+            summary = f"**{category_name}**: {created} created, {updated} updated, {skipped} skipped"
+            result_msgs.append(summary)
+        
+        # Check for extra categories
+        extra_categories = [
+            cat for cat in guild.categories if cat.name not in template_category_names
+        ]
+        if extra_categories:
+            msg = f"⚠️ Extra categories not in template: {', '.join(cat.name for cat in extra_categories)}"
+            self.logger.warning(f"[apply_monolithic_template] {msg}")
+            result_msgs.append(msg)
+            view = DeleteExtraObjectsView(extra_categories, object_type_label="category")
+            if interaction:
+                await interaction.followup.send(msg, view=view)
+            elif ctx:
+                await ctx.send(msg, view=view)
+        
+        # Check for orphan channels
+        orphan_channels = []
+        for ch in guild.channels:
+            if getattr(ch, "category", None) is None and isinstance(
+                ch, (discord.TextChannel, discord.VoiceChannel)
+            ):
+                orphan_channels.append(ch)
+        
+        if orphan_channels:
+            msg = f"⚠️ Uncategorized channels not in template: {', '.join(ch.name for ch in orphan_channels)}"
+            self.logger.warning(f"[apply_monolithic_template] {msg}")
+            result_msgs.append(msg)
+            view = DeleteExtraObjectsView(orphan_channels, object_type_label="channel")
+            if interaction:
+                await interaction.followup.send(msg, view=view)
+            elif ctx:
+                await ctx.send(msg, view=view)
+        
         return result_msgs
 
 
