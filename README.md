@@ -35,7 +35,7 @@ This project is currently in development. See the [roadmap](https://github.com/u
 
 ## Contributing
 
-Please see our (CONTRIBUTING.md)[./CONTRIBUTING.md] for contribution guidelines 
+Please see our [CONTRIBUTING.md](./.github/CONTRIBUTING.md) for contribution guidelines 
 
 1. Fork the repository
 2. Create a branch (`git checkout -b feature/amazing-feature`)

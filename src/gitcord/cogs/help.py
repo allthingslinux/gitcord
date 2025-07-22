@@ -64,7 +64,7 @@ class Help(commands.Cog):
             "• [Github Project](https://github.com/users/evolvewithevan/projects/4/views/1)\n"
             "• [Roadmap](https://github.com/users/evolvewithevan/projects/4/views/3)\n"
             "• [Wiki Documentation](https://github.com/evolvewithevan/gitcord/wiki)\n"
-            "• [Security Policy](https://github.com/evolvewithevan/gitcord/blob/main/SECURITY.md)",
+            "• [Security Policy](https://github.com/evolvewithevan/gitcord/blob/main/.github/SECURITY.md)",
             inline=False,
         )
 
@@ -119,7 +119,7 @@ class Help(commands.Cog):
             "• [Github Project](https://github.com/users/evolvewithevan/projects/4/views/1)\n"
             "• [Roadmap](https://github.com/users/evolvewithevan/projects/4/views/3)\n"
             "• [Wiki Documentation](https://github.com/evolvewithevan/gitcord/wiki)\n"
-            "• [Security Policy](https://github.com/evolvewithevan/gitcord/blob/main/SECURITY.md)",
+            "• [Security Policy](https://github.com/evolvewithevan/gitcord/blob/main/.github/SECURITY.md)",
             inline=False,
         )
 
