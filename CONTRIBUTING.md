@@ -39,6 +39,7 @@ GitCord is a Discord bot that integrates with GitHub to manage Discord server co
 ### Prerequisites
 
 - Python 3.9 or higher
+- UV installed for python
 - Git
 - A Discord bot token (for testing)
 - GitHub account (for contributing)
