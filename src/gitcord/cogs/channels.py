@@ -5,6 +5,7 @@ Contains commands for creating and managing channels and categories.
 
 from dataclasses import dataclass
 from typing import Optional, Union
+import os
 
 import yaml
 import discord
@@ -20,6 +21,8 @@ from ..utils.helpers import (
     create_channel_by_type,
     check_channel_exists,
 )
+from ..utils import template_metadata
+from ..constants.paths import get_template_repo_dir
 from ..views import DeleteExtraChannelsView
 
 
@@ -42,6 +45,24 @@ class Channels(BaseCog):
         """Initialize the Channels cog."""
         super().__init__(bot)
         self.logger.info("Channels cog loaded")
+
+    def _get_template_path(self, guild_id: int, file_name: str = None, folder: str = None) -> Optional[str]:
+        """Get the template path for a guild, falling back to None if no template repo exists."""
+        meta = template_metadata.load_metadata(guild_id)
+        if not meta or not os.path.exists(meta.get("local_path", "")):
+            return None
+        
+        base_path = meta["local_path"]
+        
+        if folder:
+            base_path = os.path.join(base_path, folder)
+            if not os.path.isdir(base_path):
+                return None
+        
+        if file_name:
+            return os.path.join(base_path, file_name)
+        
+        return base_path
 
     def _ensure_guild(
         self, ctx_or_interaction: Union[commands.Context, discord.Interaction]
@@ -202,9 +223,11 @@ class Channels(BaseCog):
     ]:
         """Process a single channel in a category."""
         try:
-            channel_yaml_path = (
-                f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
-            )
+            channel_yaml_path = self._get_template_path(guild.id, f"{channel_name}.yaml")
+            if not channel_yaml_path:
+                self.logger.error("No template repo found for guild %s. Use !git clone first.", guild.id)
+                return None, None, ""
+            
             channel_config = parse_channel_config(channel_yaml_path)
 
             existing_channel = check_channel_exists(
@@ -289,7 +312,11 @@ class Channels(BaseCog):
 
         for channel_name in category_config["channels"]:
             try:
-                channel_yaml_path = f"/home/user/Projects/gitcord-template/community/{channel_name}.yaml"
+                channel_yaml_path = self._get_template_path(guild.id, f"{channel_name}.yaml")
+                if not channel_yaml_path:
+                    self.logger.error("No template repo found for guild %s. Use !git clone first.", guild.id)
+                    continue
+                
                 channel_config = parse_channel_config(channel_yaml_path)
 
                 existing_channel = check_channel_exists(
@@ -419,7 +446,11 @@ class Channels(BaseCog):
     @commands.has_permissions(manage_channels=True)
     async def createchannel(self, ctx: commands.Context) -> None:
         """Create a channel based on properties defined in a YAML file."""
-        yaml_path = "/home/user/Projects/gitcord-template/community/off-topic.yaml"
+        yaml_path = self._get_template_path(ctx.guild.id, "off-topic.yaml")
+        if not yaml_path:
+            await self.send_error(ctx, "❌ No Template Repository", 
+                                "No template repository found for this server. Use `!git clone <url>` first to set up a template repository.")
+            return
         await self._create_single_channel(ctx, yaml_path)
 
     @commands.command(name="createcategory")
@@ -431,7 +462,11 @@ class Channels(BaseCog):
             await self.send_error(ctx, "❌ Error", "Guild not found")
             return
 
-        yaml_path = "/home/user/Projects/gitcord-template/community/category.yaml"
+        yaml_path = self._get_template_path(guild.id, "category.yaml")
+        if not yaml_path:
+            await self.send_error(ctx, "❌ No Template Repository", 
+                                "No template repository found for this server. Use `!git clone <url>` first to set up a template repository.")
+            return
 
         try:
             result = await self._create_category_common(guild, yaml_path)
@@ -504,7 +539,15 @@ class Channels(BaseCog):
 
         # Use default path if none provided
         if yaml_path is None:
-            yaml_path = "/home/user/Projects/gitcord-template/community/category.yaml"
+            yaml_path = self._get_template_path(guild.id, "category.yaml")
+            if not yaml_path:
+                embed = create_embed(
+                    title="❌ No Template Repository",
+                    description="No template repository found for this server. Use `!git clone <url>` first to set up a template repository.",
+                    color=discord.Color.red(),
+                )
+                await interaction.followup.send(embed=embed)
+                return
 
         try:
             result = await self._create_category_common(guild, yaml_path)
