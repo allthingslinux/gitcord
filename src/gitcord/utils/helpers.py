@@ -277,7 +277,7 @@ def parse_channel_config_from_str(yaml_str: str) -> dict:
 
 
 def create_channel_kwargs(
-    channel_config: dict, category: Optional[discord.CategoryChannel] = None
+    channel_config: dict, category: Optional[discord.CategoryChannel] = None, position: Optional[int] = None
 ) -> dict:
     """Create channel creation parameters from config."""
     channel_kwargs = {
@@ -288,10 +288,12 @@ def create_channel_kwargs(
     # Add optional parameters if they exist
     if "topic" in channel_config:
         channel_kwargs["topic"] = channel_config["topic"]
-    if "position" in channel_config:
-        channel_kwargs["position"] = channel_config["position"]
     if "nsfw" in channel_config:
         channel_kwargs["nsfw"] = channel_config["nsfw"]
+    
+    # Add position if specified (for YAML order-based positioning)
+    if position is not None:
+        channel_kwargs["position"] = position
 
     return channel_kwargs
 

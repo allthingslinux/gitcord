@@ -28,6 +28,7 @@ async def process_existing_category(
     guild: discord.Guild,
     category_config: dict,
     existing_category: discord.CategoryChannel,
+    category_position: int = None,
 ) -> CategoryResult:
     """
     Process an existing category and update/create channels as needed.
@@ -36,6 +37,7 @@ async def process_existing_category(
         guild: The Discord guild
         category_config: The category configuration from YAML
         existing_category: The existing category channel
+        category_position: The desired position of the category based on YAML order
 
     Returns:
         CategoryResult with processing results
@@ -44,10 +46,25 @@ async def process_existing_category(
     extra_channels = _find_extra_channels(
         existing_category, yaml_channel_names, category_config["name"]
     )
-    category_updated = await _update_category_position(
-        existing_category, category_config
-    )
 
+    # Update category position if needed
+    category_updated = False
+    if (
+        category_position is not None
+        and existing_category.position != category_position
+    ):
+        try:
+            await existing_category.edit(position=category_position)
+            logger.info(
+                "Updated category '%s' position to %d",
+                category_config["name"],
+                category_position,
+            )
+            category_updated = True
+        except (discord.Forbidden, discord.HTTPException) as e:
+            logger.warning("Failed to update category position: %s", e)
+
+    # Process channels in the category
     created_channels, updated_channels, skipped_channels = (
         await _process_category_channels(guild, existing_category, category_config)
     )
@@ -96,36 +113,20 @@ def _find_extra_channels(
     return extra_channels
 
 
-async def _update_category_position(
-    existing_category: discord.CategoryChannel, category_config: dict
-) -> bool:
-    """Update category position if needed."""
-    if existing_category.position != category_config.get("position", 0):
-        try:
-            await existing_category.edit(position=category_config.get("position", 0))
-            logger.info(
-                "Updated category '%s' position from %d to %d",
-                category_config["name"],
-                existing_category.position,
-                category_config.get("position", 0),
-            )
-            return True
-        except (discord.Forbidden, discord.HTTPException) as e:
-            logger.error("Failed to update category position: %s", e)
-    return False
-
-
 async def _process_category_channels(
     guild: discord.Guild,
     existing_category: discord.CategoryChannel,
     category_config: dict,
-) -> tuple[List[discord.abc.GuildChannel], List[discord.abc.GuildChannel], List[str]]:
+) -> tuple[
+    List[discord.abc.GuildChannel], List[discord.abc.GuildChannel], List[str]
+]:
     """Process channels in the category."""
     created_channels = []
     updated_channels = []
     skipped_channels = []
 
-    for channel_name in category_config["channels"]:
+    channels = category_config.get("channels", [])
+    for channel_index, channel_name in enumerate(channels):
         try:
             channel_yaml_path = f"{channel_name}.yaml"
             channel_config = parse_channel_config(channel_yaml_path)
@@ -136,7 +137,7 @@ async def _process_category_channels(
 
             if existing_channel:
                 channel_updated = await _update_existing_channel(
-                    existing_channel, channel_config, category_config["name"]
+                    existing_channel, channel_config, category_config["name"], channel_index
                 )
                 if channel_updated:
                     updated_channels.append(existing_channel)
@@ -144,7 +145,7 @@ async def _process_category_channels(
                     skipped_channels.append(channel_config["name"])
             else:
                 new_channel = await _create_channel_in_category(
-                    guild, channel_config, existing_category, category_config["name"]
+                    guild, channel_config, existing_category, category_config["name"], channel_index
                 )
                 if new_channel:
                     created_channels.append(new_channel)
@@ -155,6 +156,7 @@ async def _process_category_channels(
                 channel_name,
                 e,
             )
+            skipped_channels.append(channel_name)
 
     return created_channels, updated_channels, skipped_channels
 
@@ -163,64 +165,56 @@ async def _update_existing_channel(
     existing_channel: discord.abc.GuildChannel,
     channel_config: dict,
     category_name: str,
+    channel_position: int = None,
 ) -> bool:
-    """Update an existing channel if needed."""
+    """Update an existing channel with new configuration."""
     channel_updated = False
     update_kwargs = {}
 
-    # Only check topic if TextChannel
-    if isinstance(existing_channel, discord.TextChannel):
-        if existing_channel.topic != channel_config.get("topic", ""):
-            update_kwargs["topic"] = channel_config.get("topic", "")
-            channel_updated = True
-
-    # Only check nsfw if TextChannel or VoiceChannel
-    if isinstance(existing_channel, (discord.TextChannel, discord.VoiceChannel)):
-        if existing_channel.nsfw != channel_config.get("nsfw", False):
-            update_kwargs["nsfw"] = channel_config.get("nsfw", False)
-            channel_updated = True
-
-    # Only check position if attribute exists
+    # Check if topic needs updating (text channels only)
     if (
-        hasattr(existing_channel, "position")
-        and "position" in channel_config
-        and existing_channel.position != channel_config["position"]
+        channel_config["type"].lower() == "text"
+        and hasattr(existing_channel, "topic")
+        and existing_channel.topic != channel_config.get("topic", "")
     ):
-        update_kwargs["position"] = channel_config["position"]
+        update_kwargs["topic"] = channel_config.get("topic", "")
+        channel_updated = True
+
+    # Check if NSFW setting needs updating
+    if (
+        hasattr(existing_channel, "nsfw")
+        and existing_channel.nsfw != channel_config.get("nsfw", False)
+    ):
+        update_kwargs["nsfw"] = channel_config.get("nsfw", False)
+        channel_updated = True
+
+    # Check if position needs updating based on YAML order
+    if (
+        channel_position is not None
+        and hasattr(existing_channel, "position")
+        and existing_channel.position != channel_position
+    ):
+        update_kwargs["position"] = channel_position
         channel_updated = True
 
     if channel_updated:
         try:
-            # Type check to ensure we can edit the channel
-            if isinstance(
-                existing_channel, (discord.TextChannel, discord.VoiceChannel)
-            ):
-                await existing_channel.edit(**update_kwargs)
-                logger.info(
-                    "Updated channel '%s' in category '%s'",
-                    channel_config["name"],
-                    category_name,
-                )
-                return True
-            logger.warning(
-                "Cannot edit channel '%s' of type %s",
+            await existing_channel.edit(**update_kwargs)
+            position_msg = f" (moved to position {channel_position})" if channel_position is not None and "position" in update_kwargs else ""
+            logger.info(
+                "Updated channel '%s' in category '%s'%s",
                 channel_config["name"],
-                type(existing_channel).__name__,
+                category_name,
+                position_msg,
             )
-            return False
+            return True
         except (discord.Forbidden, discord.HTTPException) as e:
             logger.error(
                 "Failed to update channel '%s': %s",
                 channel_config["name"],
                 e,
             )
-            return False
 
-    logger.info(
-        "Channel '%s' in category '%s' is already up to date",
-        channel_config["name"],
-        category_name,
-    )
     return False
 
 
@@ -229,52 +223,55 @@ async def _create_channel_in_category(
     channel_config: dict,
     category: discord.CategoryChannel,
     category_name: str,
+    channel_position: int = None,
 ) -> Optional[discord.abc.GuildChannel]:
-    """Create a new channel in the category."""
+    """Create a new channel in the specified category."""
     try:
         channel_kwargs = {
             "name": channel_config["name"],
             "category": category,
-            "topic": (
-                channel_config.get("topic", "")
-                if channel_config["type"].lower() == "text"
-                else None
-            ),
-            "nsfw": (
-                channel_config.get("nsfw", False)
-                if channel_config["type"].lower() in ("text", "voice")
-                else None
-            ),
         }
 
-        # Add position if specified
-        if "position" in channel_config:
-            channel_kwargs["position"] = channel_config["position"]
+        # Add topic if specified
+        if "topic" in channel_config:
+            channel_kwargs["topic"] = channel_config["topic"]
 
-        # Create the channel based on type
-        if channel_config["type"].lower() == "text":
+        # Add NSFW setting if specified
+        if "nsfw" in channel_config:
+            channel_kwargs["nsfw"] = channel_config["nsfw"]
+        
+        # Add position if specified (for YAML order-based positioning)
+        if channel_position is not None:
+            channel_kwargs["position"] = channel_position
+
+        channel_type = channel_config["type"].lower()
+
+        if channel_type == "text":
             new_channel = await guild.create_text_channel(**channel_kwargs)
-        elif channel_config["type"].lower() == "voice":
+        elif channel_type == "voice":
+            # Voice channels don't support topic, so remove it if present
+            if "topic" in channel_kwargs:
+                del channel_kwargs["topic"]
             new_channel = await guild.create_voice_channel(**channel_kwargs)
         else:
-            logger.warning(
-                "Skipping channel '%s': Invalid type '%s'",
-                channel_config["name"],
-                channel_config["type"],
-            )
+            logger.error("Unknown channel type: %s", channel_type)
             return None
 
+        position_msg = f" at position {channel_position}" if channel_position is not None else ""
         logger.info(
-            "Created channel '%s' in category '%s'",
+            "Created %s channel '%s' in category '%s'%s",
+            channel_type,
             channel_config["name"],
             category_name,
+            position_msg,
         )
         return new_channel
 
     except (discord.Forbidden, discord.HTTPException) as e:
         logger.error(
-            "Failed to create channel '%s': %s",
+            "Failed to create channel '%s' in category '%s': %s",
             channel_config["name"],
+            category_name,
             e,
         )
         return None
@@ -297,7 +294,7 @@ def create_category_result_embed(
         embed.add_field(name="Category Updated", value="✅ Position", inline=True)
     else:
         embed.add_field(name="Category Updated", value="❌ No changes", inline=True)
-
+    
     embed.add_field(
         name="Channels Created",
         value=str(len(result.created_channels)),

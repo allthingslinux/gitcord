@@ -497,145 +497,164 @@ class Admin(BaseCog):
         template_category_channel_pairs = set()
         # If you ever support uncategorized channels in the template, collect them here
         template_uncategorized_channel_names = set()
+        
+        # First, collect all categories to determine their order
+        category_paths = []
         for root, dirs, files in os.walk(template_dir):
             if "category.yaml" in files:
-                cat_path = os.path.join(root, "category.yaml")
-                self.logger.info(
-                    f"[apply_template_from_dir] Found category.yaml: {cat_path}"
+                category_paths.append(root)
+        
+        # Sort to ensure consistent ordering (alphabetical by directory name)
+        category_paths.sort()
+        
+        for category_index, root in enumerate(category_paths):
+            cat_path = os.path.join(root, "category.yaml")
+            self.logger.info(
+                f"[apply_template_from_dir] Found category.yaml: {cat_path}"
+            )
+            with open(cat_path, "r", encoding="utf-8") as f:
+                cat_yaml = f.read()
+            try:
+                category_config = parse_category_config_from_str(cat_yaml)
+            except Exception as e:
+                msg = f"❌ Failed to parse {cat_path}: {e}"
+                self.logger.error(f"[apply_template_from_dir] {msg}")
+                result_msgs.append(msg)
+                continue
+            category_name = category_config["name"]
+            template_category_names.add(category_name)
+            for ch_name in category_config["channels"]:
+                template_channel_names.add(ch_name)
+                template_category_channel_pairs.add((category_name, ch_name))
+            # Create or update the category
+            existing_category = discord.utils.get(
+                guild.categories, name=category_name
+            )
+            if existing_category:
+                category = existing_category
+                msg = f"ℹ️ Category '{category_name}' already exists. Will update channels."
+                
+                # Update category position based on order
+                if category.position != category_index:
+                    try:
+                        await category.edit(position=category_index)
+                        msg += f" Moved to position {category_index}."
+                    except (discord.Forbidden, discord.HTTPException) as e:
+                        self.logger.warning(f"Failed to update category position: {e}")
+            else:
+                category = await guild.create_category(
+                    name=category_name, 
+                    position=category_index
                 )
-                with open(cat_path, "r", encoding="utf-8") as f:
-                    cat_yaml = f.read()
+                msg = f"✅ Created category: {category_name} at position {category_index}"
+            self.logger.info(f"[apply_template_from_dir] {msg}")
+            result_msgs.append(msg)
+            # Create/update channels
+            created, updated, skipped = 0, 0, 0
+            for channel_index, ch_name in enumerate(category_config["channels"]):
+                ch_path = os.path.join(root, f"{ch_name}.yaml")
+                if not os.path.exists(ch_path):
+                    msg = f"⚠️ Channel YAML not found: {ch_path}"
+                    self.logger.warning(f"[apply_template_from_dir] {msg}")
+                    result_msgs.append(msg)
+                    skipped += 1
+                    continue
+                with open(ch_path, "r", encoding="utf-8") as f:
+                    ch_yaml = f.read()
                 try:
-                    category_config = parse_category_config_from_str(cat_yaml)
+                    channel_config = parse_channel_config_from_str(ch_yaml)
                 except Exception as e:
-                    msg = f"❌ Failed to parse {cat_path}: {e}"
+                    msg = f"❌ Failed to parse {ch_path}: {e}"
                     self.logger.error(f"[apply_template_from_dir] {msg}")
                     result_msgs.append(msg)
+                    skipped += 1
                     continue
-                category_name = category_config["name"]
-                template_category_names.add(category_name)
-                for ch_name in category_config["channels"]:
-                    template_channel_names.add(ch_name)
-                    template_category_channel_pairs.add((category_name, ch_name))
-                # Create or update the category
-                existing_category = discord.utils.get(
-                    guild.categories, name=category_name
+                # Check if channel exists
+                existing_channel = discord.utils.get(
+                    category.channels, name=channel_config["name"]
                 )
-                if existing_category:
-                    category = existing_category
-                    msg = f"ℹ️ Category '{category_name}' already exists. Will update channels."
-                else:
-                    category = await guild.create_category(
-                        name=category_name, position=category_config.get("position", 0)
-                    )
-                    msg = f"✅ Created category: {category_name}"
-                self.logger.info(f"[apply_template_from_dir] {msg}")
-                result_msgs.append(msg)
-                # Create/update channels
-                created, updated, skipped = 0, 0, 0
-                for ch_name in category_config["channels"]:
-                    ch_path = os.path.join(root, f"{ch_name}.yaml")
-                    if not os.path.exists(ch_path):
-                        msg = f"⚠️ Channel YAML not found: {ch_path}"
-                        self.logger.warning(f"[apply_template_from_dir] {msg}")
-                        result_msgs.append(msg)
+                channel_type = channel_config["type"].lower()
+                if existing_channel:
+                    # Update topic/nsfw and position if needed
+                    update_kwargs = {}
+                    if (
+                        channel_type == "text"
+                        and hasattr(existing_channel, "topic")
+                        and existing_channel.topic
+                        != channel_config.get("topic", "")
+                    ):
+                        update_kwargs["topic"] = channel_config.get("topic", "")
+                    if (
+                        channel_type in ("text", "voice")
+                        and hasattr(existing_channel, "nsfw")
+                        and existing_channel.nsfw
+                        != channel_config.get("nsfw", False)
+                    ):
+                        update_kwargs["nsfw"] = channel_config.get("nsfw", False)
+                    
+                    # Update position based on channel order in YAML
+                    if hasattr(existing_channel, "position") and existing_channel.position != channel_index:
+                        update_kwargs["position"] = channel_index
+                    
+                    if update_kwargs:
+                        await existing_channel.edit(**update_kwargs)
+                        updated += 1
+                        position_msg = f" (position {channel_index})" if "position" in update_kwargs else ""
+                        msg = f"🔄 Updated channel: {existing_channel.name} in {category_name}{position_msg}"
+                    else:
                         skipped += 1
-                        continue
-                    with open(ch_path, "r", encoding="utf-8") as f:
-                        ch_yaml = f.read()
-                    try:
-                        channel_config = parse_channel_config_from_str(ch_yaml)
-                    except Exception as e:
-                        msg = f"❌ Failed to parse {ch_path}: {e}"
+                        msg = f"⏭️ Skipped channel (no changes): {existing_channel.name} in {category_name}"
+                    self.logger.info(f"[apply_template_from_dir] {msg}")
+                    result_msgs.append(msg)
+                else:
+                    # Create new channel with proper position
+                    channel_kwargs = {
+                        "name": channel_config["name"],
+                        "category": category,
+                        "position": channel_index,
+                    }
+                    if channel_type == "text":
+                        if "topic" in channel_config:
+                            channel_kwargs["topic"] = channel_config["topic"]
+                        if "nsfw" in channel_config:
+                            channel_kwargs["nsfw"] = channel_config["nsfw"]
+                        await guild.create_text_channel(**channel_kwargs)
+                    elif channel_type == "voice":
+                        # Voice channels don't support topic
+                        if "topic" in channel_kwargs:
+                            del channel_kwargs["topic"]
+                        if "nsfw" in channel_config:
+                            channel_kwargs["nsfw"] = channel_config["nsfw"]
+                        await guild.create_voice_channel(**channel_kwargs)
+                    else:
+                        msg = f"❌ Unknown channel type: {channel_type} for {channel_config['name']}"
                         self.logger.error(f"[apply_template_from_dir] {msg}")
                         result_msgs.append(msg)
                         skipped += 1
                         continue
-                    # Check if channel exists
-                    existing_channel = discord.utils.get(
-                        category.channels, name=channel_config["name"]
-                    )
-                    channel_type = channel_config["type"].lower()
-                    if existing_channel:
-                        # Update topic/nsfw/position if needed
-                        update_kwargs = {}
-                        if (
-                            channel_type == "text"
-                            and hasattr(existing_channel, "topic")
-                            and existing_channel.topic
-                            != channel_config.get("topic", "")
-                        ):
-                            update_kwargs["topic"] = channel_config.get("topic", "")
-                        if (
-                            channel_type in ("text", "voice")
-                            and hasattr(existing_channel, "nsfw")
-                            and existing_channel.nsfw
-                            != channel_config.get("nsfw", False)
-                        ):
-                            update_kwargs["nsfw"] = channel_config.get("nsfw", False)
-                        if (
-                            "position" in channel_config
-                            and hasattr(existing_channel, "position")
-                            and existing_channel.position != channel_config["position"]
-                        ):
-                            update_kwargs["position"] = channel_config["position"]
-                        if update_kwargs:
-                            await existing_channel.edit(**update_kwargs)
-                            updated += 1
-                            msg = f"🔄 Updated channel: {existing_channel.name} in {category_name}"
-                        else:
-                            skipped += 1
-                            msg = f"⏭️ Skipped channel (no changes): {existing_channel.name} in {category_name}"
-                        self.logger.info(f"[apply_template_from_dir] {msg}")
-                        result_msgs.append(msg)
-                    else:
-                        # Create new channel
-                        channel_kwargs = {
-                            "name": channel_config["name"],
-                            "category": category,
-                        }
-                        if "position" in channel_config:
-                            channel_kwargs["position"] = channel_config["position"]
-                        if channel_type == "text":
-                            if "topic" in channel_config:
-                                channel_kwargs["topic"] = channel_config["topic"]
-                            if "nsfw" in channel_config:
-                                channel_kwargs["nsfw"] = channel_config["nsfw"]
-                            await guild.create_text_channel(**channel_kwargs)
-                        elif channel_type == "voice":
-                            await guild.create_voice_channel(**channel_kwargs)
-                        else:
-                            msg = f"❌ Unknown channel type: {channel_type} for {channel_config['name']}"
-                            self.logger.error(f"[apply_template_from_dir] {msg}")
-                            result_msgs.append(msg)
-                            skipped += 1
-                            continue
-                        created += 1
-                        msg = f"✅ Created channel: {channel_config['name']} in {category_name}"
-                        self.logger.info(f"[apply_template_from_dir] {msg}")
-                        result_msgs.append(msg)
-                # After all channels processed, check for extra channels in this category
-                template_channel_names = set(category_config["channels"])
-                extra_channels = [
-                    ch
-                    for ch in category.channels
-                    if ch.name not in template_channel_names
-                ]
-                if extra_channels:
-                    msg = f"⚠️ Extra channels not in template for category '{category_name}': {', '.join(ch.name for ch in extra_channels)}"
-                    self.logger.warning(f"[apply_template_from_dir] {msg}")
+                    created += 1
+                    msg = f"✅ Created channel: {channel_config['name']} in {category_name} at position {channel_index}"
+                    self.logger.info(f"[apply_template_from_dir] {msg}")
                     result_msgs.append(msg)
-                    view = DeleteExtraObjectsView(
-                        extra_channels, object_type_label="channel"
-                    )
-                    if interaction:
-                        await interaction.followup.send(msg, view=view)
-                    elif ctx:
-                        await ctx.send(msg, view=view)
-                summary = f"**{category_name}**: {created} created, {updated} updated, {skipped} skipped"
-                result_msgs.append(summary)
-        # After all categories processed, check for extra categories
-        existing_category_names = set(cat.name for cat in guild.categories)
+            
+            # Check for extra channels in this category
+            extra_channels = [
+                ch for ch in category.channels if ch.name not in template_channel_names
+            ]
+            if extra_channels:
+                msg = f"⚠️ Extra channels not in template for category '{category_name}': {', '.join(ch.name for ch in extra_channels)}"
+                self.logger.warning(f"[apply_template_from_dir] {msg}")
+                result_msgs.append(msg)
+                view = DeleteExtraObjectsView(extra_channels, object_type_label="channel")
+                if interaction:
+                    await interaction.followup.send(msg, view=view)
+                elif ctx:
+                    await ctx.send(msg, view=view)
+            
+            summary = f"**{category_name}**: {created} created, {updated} updated, {skipped} skipped"
+            result_msgs.append(summary)
+        
+        # Check for extra categories
         extra_categories = [
             cat for cat in guild.categories if cat.name not in template_category_names
         ]
@@ -643,14 +662,13 @@ class Admin(BaseCog):
             msg = f"⚠️ Extra categories not in template: {', '.join(cat.name for cat in extra_categories)}"
             self.logger.warning(f"[apply_template_from_dir] {msg}")
             result_msgs.append(msg)
-            view = DeleteExtraObjectsView(
-                extra_categories, object_type_label="category"
-            )
+            view = DeleteExtraObjectsView(extra_categories, object_type_label="category")
             if interaction:
                 await interaction.followup.send(msg, view=view)
             elif ctx:
                 await ctx.send(msg, view=view)
-        # After all categories processed, check for orphan channels
+        
+        # Check for orphan channels
         orphan_channels = []
         for ch in guild.channels:
             if getattr(ch, "category", None) is None and isinstance(
@@ -704,7 +722,7 @@ class Admin(BaseCog):
                 result_msgs.append(msg)
         
         # Process each category
-        for category_config in template_config["categories"]:
+        for category_index, category_config in enumerate(template_config["categories"]):
             category_name = category_config["name"]
             template_category_names.add(category_name)
             
@@ -713,11 +731,21 @@ class Admin(BaseCog):
             if existing_category:
                 category = existing_category
                 msg = f"ℹ️ Category '{category_name}' already exists. Will update channels."
+                
+                # Update category position based on YAML order
+                desired_position = category_index
+                if category.position != desired_position:
+                    try:
+                        await category.edit(position=desired_position)
+                        msg += f" Moved to position {desired_position}."
+                    except (discord.Forbidden, discord.HTTPException) as e:
+                        self.logger.warning(f"Failed to update category position: {e}")
             else:
                 category = await guild.create_category(
-                    name=category_name, position=category_config.get("position", 0)
+                    name=category_name, 
+                    position=category_index
                 )
-                msg = f"✅ Created category: {category_name}"
+                msg = f"✅ Created category: {category_name} at position {category_index}"
             
             self.logger.info(f"[apply_monolithic_template] {msg}")
             result_msgs.append(msg)
@@ -727,7 +755,7 @@ class Admin(BaseCog):
             template_channel_names = set()
             
             channels = category_config.get("channels", [])
-            for channel_config in channels:
+            for channel_index, channel_config in enumerate(channels):
                 channel_name = channel_config["name"]
                 template_channel_names.add(channel_name)
                 
@@ -736,7 +764,7 @@ class Admin(BaseCog):
                 channel_type = channel_config["type"].lower()
                 
                 if existing_channel:
-                    # Update topic/nsfw/position if needed
+                    # Update topic/nsfw and position if needed
                     update_kwargs = {}
                     if (
                         channel_type == "text"
@@ -750,17 +778,17 @@ class Admin(BaseCog):
                         and existing_channel.nsfw != channel_config.get("nsfw", False)
                     ):
                         update_kwargs["nsfw"] = channel_config.get("nsfw", False)
-                    if (
-                        "position" in channel_config
-                        and hasattr(existing_channel, "position")
-                        and existing_channel.position != channel_config["position"]
-                    ):
-                        update_kwargs["position"] = channel_config["position"]
+                    
+                    # Update position based on YAML order
+                    desired_position = channel_index
+                    if hasattr(existing_channel, "position") and existing_channel.position != desired_position:
+                        update_kwargs["position"] = desired_position
                     
                     if update_kwargs:
                         await existing_channel.edit(**update_kwargs)
                         updated += 1
-                        msg = f"🔄 Updated channel: {existing_channel.name} in {category_name}"
+                        position_msg = f" (position {desired_position})" if "position" in update_kwargs else ""
+                        msg = f"🔄 Updated channel: {existing_channel.name} in {category_name}{position_msg}"
                     else:
                         skipped += 1
                         msg = f"⏭️ Skipped channel (no changes): {existing_channel.name} in {category_name}"
@@ -768,13 +796,12 @@ class Admin(BaseCog):
                     self.logger.info(f"[apply_monolithic_template] {msg}")
                     result_msgs.append(msg)
                 else:
-                    # Create new channel
+                    # Create new channel with proper position
                     channel_kwargs = {
                         "name": channel_config["name"],
                         "category": category,
+                        "position": channel_index,
                     }
-                    if "position" in channel_config:
-                        channel_kwargs["position"] = channel_config["position"]
                     
                     if channel_type == "text":
                         if "topic" in channel_config:
@@ -783,6 +810,11 @@ class Admin(BaseCog):
                             channel_kwargs["nsfw"] = channel_config["nsfw"]
                         await guild.create_text_channel(**channel_kwargs)
                     elif channel_type == "voice":
+                        # Voice channels don't support topic, so remove it if present
+                        if "topic" in channel_kwargs:
+                            del channel_kwargs["topic"]
+                        if "nsfw" in channel_config:
+                            channel_kwargs["nsfw"] = channel_config["nsfw"]
                         await guild.create_voice_channel(**channel_kwargs)
                     else:
                         msg = f"❌ Unknown channel type: {channel_type} for {channel_config['name']}"
@@ -792,7 +824,7 @@ class Admin(BaseCog):
                         continue
                     
                     created += 1
-                    msg = f"✅ Created channel: {channel_config['name']} in {category_name}"
+                    msg = f"✅ Created channel: {channel_config['name']} in {category_name} at position {channel_index}"
                     self.logger.info(f"[apply_monolithic_template] {msg}")
                     result_msgs.append(msg)
             
