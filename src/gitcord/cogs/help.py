@@ -24,8 +24,7 @@ class Help(commands.Cog):
         """Prefix command to show help information and link to the wiki."""
         embed = create_embed(
             title="🤖 GitCord Help",
-            description="Welcome to GitCord! Here's how to get help and learn more about the bot.",
-            color=discord.Color.blue(),
+            description="Welcome to GitCord! Here's how to get help and learn more about the bot."
         )
 
         embed.add_field(
@@ -44,17 +43,21 @@ class Help(commands.Cog):
             value="• `!hello` - Get a friendly greeting\n"
             "• `!help` - Show help information and link to the wiki (***YOU ARE HERE***)\n"
             "• `!ping` - Check bot latency\n"
-            "• `!createchannel` - Create a channel from YAML (Manage Channels)\n"
-            "• `!createcategory` - Create a category from YAML (Manage Channels)\n"
-            "• `!synccommands` - Sync slash commands (Admin only)",
+            "• `!createchannel` - Create a channel from YAML (Requires Manage Channels)\n"
+            "• `!createcategory` - Create a category from YAML (Requires Manage Channels)\n"
+            "• `!git clone <url> [-b branch]` - Clone a template repo for this server (Admin only)\n"
+            "• `!git pull` - Pull latest changes and apply template (Admin only)\n"
+            "• `!synccommands` - Sync slash commands (Admin only)\n"
+            "• `!applytemplate` - (Deprecated) Use !git clone and !git pull instead",
             inline=False,
         )
 
         embed.add_field(
             name="⚡ Slash Commands",
             value="• `/slashping` - Check bot latency\n"
-            "• `/createcategory [yaml_path]` - Create category from YAML (Manage Channels)\n"
-            "• `/synccommands` - Sync slash commands (Admin only)",
+            "• `/createcategory [yaml_path]` - Create category from YAML (Requires Manage Channels)\n"
+            "• `/synccommands` - Sync slash commands (Admin only)\n"
+            "• `/applytemplate` - (Deprecated) Use !git clone and !git pull instead",
             inline=False,
         )
 
@@ -68,7 +71,7 @@ class Help(commands.Cog):
             inline=False,
         )
 
-        embed.set_footer(text="GitCord - Discord bot for GitOps based server structure")
+        embed.set_footer(text="GitCord - Discord bot for GitOps-based server structure. For more, see the Wiki.")
 
         await ctx.send(embed=embed)
 
@@ -79,8 +82,7 @@ class Help(commands.Cog):
         """Slash command to show help information and link to the wiki."""
         embed = create_embed(
             title="🤖 GitCord Help",
-            description="Welcome to GitCord! Here's how to get help and learn more about the bot.",
-            color=discord.Color.blue(),
+            description="Welcome to GitCord! Here's how to get help and learn more about the bot."
         )
 
         embed.add_field(
@@ -99,17 +101,21 @@ class Help(commands.Cog):
             value="• `!hello` - Get a friendly greeting\n"
             "• `!help` - Show help information and link to the wiki (***YOU ARE HERE***)\n"
             "• `!ping` - Check bot latency\n"
-            "• `!createchannel` - Create a channel from YAML (Manage Channels)\n"
-            "• `!createcategory` - Create a category from YAML (Manage Channels)\n"
-            "• `!synccommands` - Sync slash commands (Admin only)",
+            "• `!createchannel` - Create a channel from YAML (Requires Manage Channels)\n"
+            "• `!createcategory` - Create a category from YAML (Requires Manage Channels)\n"
+            "• `!git clone <url> [-b branch]` - Clone a template repo for this server (Admin only)\n"
+            "• `!git pull` - Pull latest changes and apply template (Admin only)\n"
+            "• `!synccommands` - Sync slash commands (Admin only)\n"
+            "• `!applytemplate` - (Deprecated) Use !git clone and !git pull instead",
             inline=False,
         )
 
         embed.add_field(
             name="⚡ Slash Commands",
             value="• `/slashping` - Check bot latency\n"
-            "• `/createcategory [yaml_path]` - Create category from YAML (Manage Channels)\n"
-            "• `/synccommands` - Sync slash commands (Admin only)",
+            "• `/createcategory [yaml_path]` - Create category from YAML (Requires Manage Channels)\n"
+            "• `/synccommands` - Sync slash commands (Admin only)\n"
+            "• `/applytemplate` - (Deprecated) Use !git clone and !git pull instead",
             inline=False,
         )
 
@@ -123,7 +129,7 @@ class Help(commands.Cog):
             inline=False,
         )
 
-        embed.set_footer(text="GitCord - Discord bot for GitOps based server structure")
+        embed.set_footer(text="GitCord - Discord bot for GitOps-based server structure. For more, see the Wiki.")
 
         await interaction.response.send_message(embed=embed)
 

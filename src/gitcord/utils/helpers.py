@@ -29,7 +29,7 @@ def format_latency(latency: float) -> str:
 def create_embed(
     title: str,
     description: str,
-    color: Union[int, discord.Color] = discord.Color.blue(),
+    color: Union[int, discord.Color] = discord.Color.from_str("#6f7dff"),
     author: Optional[discord.Member] = None,
     timestamp: Optional[datetime] = None,
     footer: Optional[str] = None,

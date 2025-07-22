@@ -141,7 +141,6 @@ class ConfirmDeleteView(View):
         """Handle cancel button click."""
         embed = create_embed(
             title="❌ Deletion Cancelled",
-            description="Channel deletion was cancelled.",
-            color=discord.Color.blue(),
+            description="Channel deletion was cancelled."
         )
         await interaction.response.edit_message(embed=embed, view=None)
