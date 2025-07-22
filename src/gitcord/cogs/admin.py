@@ -252,6 +252,8 @@ class Admin(BaseCog):
                     await ctx.send(embed=warning_embed)
                 
                 try:
+                    # Always apply template to ensure Discord matches the template
+                    # (Even if git says "up to date", Discord might not match the template)
                     result_msgs = await self._apply_template_from_dir(ctx.guild, meta["local_path"], ctx=ctx)
                     
                     # Convert to git-style diff
@@ -534,8 +536,11 @@ class Admin(BaseCog):
                 category = existing_category
                 msg = f"ℹ️ Category '{category_name}' already exists. Will update channels."
                 
-                # Update category position based on order
-                if category.position != category_index:
+                # Check if category is in correct relative order (smart positioning)
+                guild_categories = sorted(guild.categories, key=lambda cat: cat.position)
+                current_relative_index = guild_categories.index(category)
+                
+                if current_relative_index != category_index:
                     try:
                         await category.edit(position=category_index)
                         msg += f" Moved to position {category_index}."
@@ -592,9 +597,15 @@ class Admin(BaseCog):
                     ):
                         update_kwargs["nsfw"] = channel_config.get("nsfw", False)
                     
-                    # Update position based on channel order in YAML
-                    if hasattr(existing_channel, "position") and existing_channel.position != channel_index:
-                        update_kwargs["position"] = channel_index
+                    # Check if channel is in correct relative order (smart positioning)
+                    if hasattr(existing_channel, "position"):
+                        # Get all channels in category sorted by position
+                        category_channels = sorted(category.channels, key=lambda ch: ch.position)
+                        current_relative_index = category_channels.index(existing_channel)
+                        
+                        # Only move if the channel is not at the correct relative position
+                        if current_relative_index != channel_index:
+                            update_kwargs["position"] = channel_index
                     
                     if update_kwargs:
                         await existing_channel.edit(**update_kwargs)
@@ -732,12 +743,15 @@ class Admin(BaseCog):
                 category = existing_category
                 msg = f"ℹ️ Category '{category_name}' already exists. Will update channels."
                 
-                # Update category position based on YAML order
-                desired_position = category_index
-                if category.position != desired_position:
+                # Check if category is in correct relative order
+                desired_yaml_index = category_index
+                guild_categories = sorted(guild.categories, key=lambda cat: cat.position)
+                current_relative_index = guild_categories.index(category)
+                
+                if current_relative_index != desired_yaml_index:
                     try:
-                        await category.edit(position=desired_position)
-                        msg += f" Moved to position {desired_position}."
+                        await category.edit(position=desired_yaml_index)
+                        msg += f" Moved to position {desired_yaml_index}."
                     except (discord.Forbidden, discord.HTTPException) as e:
                         self.logger.warning(f"Failed to update category position: {e}")
             else:
@@ -779,15 +793,21 @@ class Admin(BaseCog):
                     ):
                         update_kwargs["nsfw"] = channel_config.get("nsfw", False)
                     
-                    # Update position based on YAML order
-                    desired_position = channel_index
-                    if hasattr(existing_channel, "position") and existing_channel.position != desired_position:
-                        update_kwargs["position"] = desired_position
+                    # Check if channel is in correct relative order (smart positioning)
+                    desired_yaml_index = channel_index
+                    if hasattr(existing_channel, "position"):
+                        # Get all channels in category sorted by position
+                        category_channels = sorted(category.channels, key=lambda ch: ch.position)
+                        current_relative_index = category_channels.index(existing_channel)
+                        
+                        # Only move if the channel is not at the correct relative position
+                        if current_relative_index != desired_yaml_index:
+                            update_kwargs["position"] = desired_yaml_index
                     
                     if update_kwargs:
                         await existing_channel.edit(**update_kwargs)
                         updated += 1
-                        position_msg = f" (position {desired_position})" if "position" in update_kwargs else ""
+                        position_msg = f" (position {desired_yaml_index})" if "position" in update_kwargs else ""
                         msg = f"🔄 Updated channel: {existing_channel.name} in {category_name}{position_msg}"
                     else:
                         skipped += 1

@@ -47,22 +47,25 @@ async def process_existing_category(
         existing_category, yaml_channel_names, category_config["name"]
     )
 
-    # Update category position if needed
+    # Update category position if needed (smart positioning)
     category_updated = False
-    if (
-        category_position is not None
-        and existing_category.position != category_position
-    ):
-        try:
-            await existing_category.edit(position=category_position)
-            logger.info(
-                "Updated category '%s' position to %d",
-                category_config["name"],
-                category_position,
-            )
-            category_updated = True
-        except (discord.Forbidden, discord.HTTPException) as e:
-            logger.warning("Failed to update category position: %s", e)
+    if category_position is not None:
+        # Get all categories in guild sorted by position
+        guild_categories = sorted(guild.categories, key=lambda cat: cat.position)
+        current_relative_index = guild_categories.index(existing_category)
+        
+        # Only move if the category is not at the correct relative position
+        if current_relative_index != category_position:
+            try:
+                await existing_category.edit(position=category_position)
+                logger.info(
+                    "Updated category '%s' position to %d",
+                    category_config["name"],
+                    category_position,
+                )
+                category_updated = True
+            except (discord.Forbidden, discord.HTTPException) as e:
+                logger.warning("Failed to update category position: %s", e)
 
     # Process channels in the category
     created_channels, updated_channels, skipped_channels = (
@@ -188,14 +191,19 @@ async def _update_existing_channel(
         update_kwargs["nsfw"] = channel_config.get("nsfw", False)
         channel_updated = True
 
-    # Check if position needs updating based on YAML order
+    # Check if position needs updating based on YAML order (smart positioning)
     if (
         channel_position is not None
         and hasattr(existing_channel, "position")
-        and existing_channel.position != channel_position
     ):
-        update_kwargs["position"] = channel_position
-        channel_updated = True
+        # Get all channels in category sorted by position  
+        category_channels = sorted(existing_channel.category.channels, key=lambda ch: ch.position)
+        current_relative_index = category_channels.index(existing_channel)
+        
+        # Only move if the channel is not at the correct relative position
+        if current_relative_index != channel_position:
+            update_kwargs["position"] = channel_position
+            channel_updated = True
 
     if channel_updated:
         try:
