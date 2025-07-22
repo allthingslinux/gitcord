@@ -144,7 +144,7 @@ gitcord/
 
 ## 🤝 Contributing
 
-We welcome contributions! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for:
+We welcome contributions! Please read [CONTRIBUTING.md](.github/CONTRIBUTING.md) for:
 - Coding standards (PEP8, type hints, docstrings)
 - How to set up your dev environment
 - Testing and documentation guidelines
