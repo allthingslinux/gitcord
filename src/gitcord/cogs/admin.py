@@ -22,6 +22,8 @@ from ..utils.helpers import (
     clean_webpage_text,
     parse_category_config_from_str,
     parse_channel_config_from_str,
+    create_error_embed,
+    create_success_embed,
 )
 from ..views.base_views import DeleteExtraObjectsView
 from ..utils import template_metadata
@@ -88,70 +90,234 @@ class Admin(BaseCog):
                 ctx, "❌ Sync Failed", f"Failed to sync commands: {e}"
             )
 
+    def _convert_to_git_style_diff(self, result_msgs: list) -> str:
+        """Convert verbose template messages to git-style diff format."""
+        diff_lines = []
+        
+        for msg in result_msgs:
+            # Skip summary lines and info messages
+            if "**" in msg or msg.startswith("ℹ️") or "already exists" in msg:
+                continue
+                
+            # Parse different message types
+            if "🔄 Updated channel:" in msg or "🔄 Updated category:" in msg:
+                # Extract name: "🔄 Updated channel: moderator-only in Boilerplate" -> "M  moderator-only"
+                parts = msg.split(": ", 1)[1].split(" in ")
+                name = parts[0] if parts else "unknown"
+                diff_lines.append(f"M  {name}")
+            elif "Created channel:" in msg or "Created category:" in msg:
+                # Extract name: "Created channel: new-channel in Category" -> "A  new-channel"
+                parts = msg.split(": ", 1)[1].split(" in ")
+                name = parts[0] if parts else "unknown"
+                diff_lines.append(f"A  {name}")
+            elif "Deleted channel:" in msg or "Deleted category:" in msg:
+                # Extract name for deletions
+                parts = msg.split(": ", 1)[1].split(" in ")
+                name = parts[0] if parts else "unknown"
+                diff_lines.append(f"D  {name}")
+            # Skip "Skipped" messages as they indicate no changes
+            
+        return "\n".join(diff_lines) if diff_lines else "No changes"
+
     @commands.command(name="git")
     @commands.has_permissions(administrator=True)
     async def git_command(self, ctx: commands.Context, *args):
         """Handle !git clone <url> [-b branch], !git pull, and warn on others."""
         if not args:
-            await ctx.send("❌ Usage: !git clone <url> [-b branch] or !git pull")
+            embed = create_error_embed(
+                "❌ Invalid Usage", 
+                "Usage: `!git clone <url> [-b branch]` or `!git pull`"
+            )
+            await ctx.send(embed=embed)
             return
+        
         cmd = args[0]
         guild_id = ctx.guild.id
         repo_dir = get_template_repo_dir(guild_id)
+        
         if cmd == "clone":
             if len(args) < 2:
-                await ctx.send("❌ Usage: !git clone <url> [-b branch]")
+                embed = create_error_embed(
+                    "❌ Missing Repository URL",
+                    "Usage: `!git clone <url> [-b branch]`"
+                )
+                await ctx.send(embed=embed)
                 return
+            
             url = args[1]
             branch = "main"
             if len(args) >= 4 and args[2] == "-b":
                 branch = args[3]
+            
             # Remove existing repo if present
             if os.path.exists(repo_dir):
                 shutil.rmtree(repo_dir)
             os.makedirs(repo_dir, exist_ok=True)
+            
             try:
                 result = subprocess.run([
                     "git", "clone", "-b", branch, url, repo_dir
                 ], capture_output=True, text=True, timeout=60)
+                
                 if result.returncode != 0:
-                    await ctx.send(f"❌ git clone failed: {result.stderr}")
+                    error_embed = create_error_embed(
+                        "❌ Git Clone Failed",
+                        f"```\n{result.stderr}\n```"
+                    )
+                    await ctx.send(embed=error_embed)
                     return
+                
                 # Save metadata
                 template_metadata.save_metadata(guild_id, {
                     "url": url,
                     "branch": branch,
                     "local_path": repo_dir
                 })
-                await ctx.send(f"✅ Cloned template repo from {url} (branch: {branch}) for this server.")
+                
+                # Always show success
+                success_embed = create_success_embed(
+                    "✅ Repository Cloned",
+                    f"Template repository cloned successfully\n`{url}` (branch: `{branch}`)"
+                )
+                await ctx.send(embed=success_embed)
+                
+                # Show warnings if any
+                if result.stderr.strip():
+                    warning_embed = create_embed(
+                        title="⚠️ Clone Warnings",
+                        description=f"```\n{result.stderr}\n```",
+                        color=discord.Color.orange()
+                    )
+                    await ctx.send(embed=warning_embed)
+                    
+            except subprocess.TimeoutExpired:
+                timeout_embed = create_error_embed(
+                    "⏰ Clone Timeout",
+                    "Git clone operation timed out after 60 seconds."
+                )
+                await ctx.send(embed=timeout_embed)
             except Exception as e:
-                await ctx.send(f"❌ git clone error: {e}")
+                error_embed = create_error_embed(
+                    "❌ Clone Error",
+                    f"```\n{str(e)}\n```"
+                )
+                await ctx.send(embed=error_embed)
+                
         elif cmd == "pull":
             meta = template_metadata.load_metadata(guild_id)
             if not meta or not os.path.exists(meta.get("local_path", "")):
-                await ctx.send("❌ No template repo found for this server. Run !git clone first.")
+                embed = create_error_embed(
+                    "❌ No Template Repository",
+                    "Run `!git clone <url>` first to set up a template repository."
+                )
+                await ctx.send(embed=embed)
                 return
+            
             try:
                 result = subprocess.run([
                     "git", "pull"
                 ], cwd=meta["local_path"], capture_output=True, text=True, timeout=60)
+                
                 if result.returncode != 0:
-                    await ctx.send(f"❌ git pull failed: {result.stderr}")
+                    error_embed = create_error_embed(
+                        "❌ Git Pull Failed",
+                        f"```\n{result.stderr}\n```"
+                    )
+                    await ctx.send(embed=error_embed)
                     return
-                pull_msg = f"✅ git pull successful: {result.stdout}"
-                await ctx.send("🔄 Applying template from local repo after pull...")
+                
+                # Always show basic success
+                git_output = result.stdout.strip()
+                if git_output and git_output != "Already up to date.":
+                    # Show changes
+                    success_embed = create_success_embed(
+                        "✅ Repository Updated",
+                        f"```\n{git_output}\n```"
+                    )
+                else:
+                    # Show "already up to date"
+                    success_embed = create_success_embed(
+                        "✅ Repository Up To Date",
+                        "No changes found in remote repository"
+                    )
+                await ctx.send(embed=success_embed)
+                
+                # Show git warnings if any
+                if result.stderr.strip():
+                    warning_embed = create_embed(
+                        title="⚠️ Git Warnings",
+                        description=f"```\n{result.stderr}\n```",
+                        color=discord.Color.orange()
+                    )
+                    await ctx.send(embed=warning_embed)
+                
                 try:
                     result_msgs = await self._apply_template_from_dir(ctx.guild, meta["local_path"], ctx=ctx)
-                    for msg in result_msgs:
-                        self.logger.info(f"[git pull apply] {msg}")
-                    await ctx.send(pull_msg + "\n" + "\n".join(result_msgs))
+                    
+                    # Convert to git-style diff
+                    if result_msgs:
+                        # Check for warnings/errors first
+                        warnings = [msg for msg in result_msgs if "warning" in msg.lower() or "error" in msg.lower() or "failed" in msg.lower()]
+                        
+                        # Show warnings if any
+                        if warnings:
+                            template_warning_embed = create_embed(
+                                title="⚠️ Template Warnings",
+                                description=f"```\n{chr(10).join(warnings)}\n```",
+                                color=discord.Color.orange()
+                            )
+                            await ctx.send(embed=template_warning_embed)
+                        
+                        # Convert to git-style diff
+                        git_diff = self._convert_to_git_style_diff(result_msgs)
+                        
+                        if git_diff and git_diff != "No changes":
+                            template_changes_embed = create_success_embed(
+                                "✅ Template Applied",
+                                f"```\n{git_diff}\n```"
+                            )
+                            await ctx.send(embed=template_changes_embed)
+                        else:
+                            # No changes
+                            template_success_embed = create_success_embed(
+                                "✅ Template Applied",
+                                "No changes needed"
+                            )
+                            await ctx.send(embed=template_success_embed)
+                    else:
+                        # No template results
+                        template_success_embed = create_success_embed(
+                            "✅ Template Applied",
+                            "No output from template processing"
+                        )
+                        await ctx.send(embed=template_success_embed)
+                        
                 except Exception as e:
                     self.logger.error(f"[git pull apply] Error: {e}", exc_info=True)
-                    await self.send_error(ctx, "❌ Template Error after pull", str(e))
+                    error_embed = create_error_embed(
+                        "❌ Template Application Failed",
+                        f"```\n{str(e)}\n```"
+                    )
+                    await ctx.send(embed=error_embed)
+                    
+            except subprocess.TimeoutExpired:
+                timeout_embed = create_error_embed(
+                    "⏰ Pull Timeout",
+                    "Git pull operation timed out after 60 seconds."
+                )
+                await ctx.send(embed=timeout_embed)
             except Exception as e:
-                await ctx.send(f"❌ git pull error: {e}")
+                error_embed = create_error_embed(
+                    "❌ Pull Error",
+                    f"```\n{str(e)}\n```"
+                )
+                await ctx.send(embed=error_embed)
         else:
-            await ctx.send("⚠️ Only 'git clone' and 'git pull' are supported for templates.")
+            embed = create_error_embed(
+                "⚠️ Unsupported Git Command",
+                f"Only `git clone` and `git pull` are supported. You tried: `!git {cmd}`"
+            )
+            await ctx.send(embed=embed)
 
     # Patch applytemplate to use local repo if present
     def _get_template_dir(self, folder=None, guild_id=None):
