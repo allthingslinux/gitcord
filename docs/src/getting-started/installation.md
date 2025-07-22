@@ -17,11 +17,7 @@ cd gitcord
 
 ## Step 2: Install Dependencies
 
-### Using pip (Not Recommended)
-
-```bash
-pip install -r requirements.txt
-```
+UV is required
 
 ### Using uv (Recommended)
 

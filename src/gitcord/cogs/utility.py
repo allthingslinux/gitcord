@@ -24,8 +24,7 @@ class Utility(BaseCog):
         """Simple hello world command."""
         embed = create_embed(
             title="👋 Welcome!",
-            description=f"Hello, {ctx.author.mention}! Welcome to GitCord!",
-            color=discord.Color.blue(),
+            description=f"Hello, {ctx.author.mention}! Welcome to GitCord!"
         )
         await ctx.send(embed=embed)
 

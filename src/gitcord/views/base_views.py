@@ -66,8 +66,7 @@ class ConfirmationView(BaseView):
         self.result = False
         embed = create_embed(
             title="❌ Cancelled",
-            description="Action was cancelled.",
-            color=discord.Color.blue(),
+            description="Action was cancelled."
         )
         await interaction.response.edit_message(embed=embed, view=None)
 
@@ -228,7 +227,6 @@ class ConfirmDeleteObjectsView(View):
 
         embed = create_embed(
             title="❌ Deletion Cancelled",
-            description=f"{self.object_type_label.title()} deletion was cancelled.",
-            color=discord.Color.blue(),
+            description=f"{self.object_type_label.title()} deletion was cancelled."
         )
         await interaction.response.edit_message(embed=embed, view=None)

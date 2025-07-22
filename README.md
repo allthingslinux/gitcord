@@ -1,5 +1,8 @@
 # [GitCord](https://evolvewithevan.github.io/gitcord/troubleshooting/debug-mode.html)
 
+[![Documentation](https://img.shields.io/badge/docs-mdBook-blue)](https://evolvewithevan.github.io/gitcord/)
+[![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE)
+
 GitCord is a Discord bot that allows you to manage your Discord server's channel structure and configuration through Git. It provides a seamless way to version control your Discord server setup and automatically sync changes from your GitHub repository.
 
 ## ⚠️ Disclaimer
@@ -59,6 +62,4 @@ If you encounter any issues or have questions, please open an issue on this GitH
 
 ---
 
-**Note**: This project is currently in active development. Features and documentation may change or become innacurate as the project evolves. 
-
-Made with ❤️ for your community
+Made with ❤️ by the GitCord Team. [Full Documentation](https://evolvewithevan.github.io/gitcord/)
