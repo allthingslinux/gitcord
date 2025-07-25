@@ -10,9 +10,13 @@ from functools import wraps
 import discord
 from discord.ext import commands
 
-from ..config import config
 from ..constants.messages import ERR_RATE_LIMITED
 from .helpers import create_error_embed
+
+
+# Hard-coded rate limiting configuration
+RATE_LIMIT_MAX_COMMANDS = 1  # 1 command per window
+RATE_LIMIT_WINDOW = 5       # 5 second window
 
 
 class RateLimiter:
@@ -25,58 +29,40 @@ class RateLimiter:
         # Dict[user_id, last_rate_limit_message_time]
         self._last_rate_limit_message: Dict[int, float] = {}
     
-    def is_rate_limited(self, user_id: int, member: discord.Member = None) -> Tuple[bool, float]:
+    def is_rate_limited(self, user_id: int) -> Tuple[bool, float]:
         """
         Check if a user is rate limited.
         
         Args:
             user_id: Discord user ID
-            member: Discord member object (for permission checking)
             
         Returns:
             Tuple of (is_limited, time_until_reset)
         """
-        # Check if rate limiting is globally disabled
-        if not config.rate_limit_enabled:
-            return False, 0.0
-            
-        # Check if user has admin/mod permissions (exempt from rate limiting)
-        if member and self._is_exempt_user(member):
-            return False, 0.0
-            
         current_time = time.time()
         user_timestamps = self._user_timestamps[user_id]
         
         # Remove old timestamps outside the window
-        window_start = current_time - config.rate_limit_window
+        window_start = current_time - RATE_LIMIT_WINDOW
         while user_timestamps and user_timestamps[0] < window_start:
             user_timestamps.popleft()
         
         # Check if user has exceeded the limit
-        if len(user_timestamps) >= config.rate_limit_max_commands:
+        if len(user_timestamps) >= RATE_LIMIT_MAX_COMMANDS:
             # Calculate time until reset
             oldest_timestamp = user_timestamps[0]
-            time_until_reset = config.rate_limit_window - (current_time - oldest_timestamp)
+            time_until_reset = RATE_LIMIT_WINDOW - (current_time - oldest_timestamp)
             return True, max(0, time_until_reset)
         
         return False, 0.0
     
-    def add_command_usage(self, user_id: int, member: discord.Member = None) -> None:
+    def add_command_usage(self, user_id: int) -> None:
         """
         Record a command usage for a user.
         
         Args:
             user_id: Discord user ID
-            member: Discord member object (for permission checking)
         """
-        # Don't track usage if rate limiting is disabled
-        if not config.rate_limit_enabled:
-            return
-            
-        # Don't track usage for exempt users
-        if member and self._is_exempt_user(member):
-            return
-            
         current_time = time.time()
         self._user_timestamps[user_id].append(current_time)
     
@@ -99,59 +85,6 @@ class RateLimiter:
             return True
         
         return False
-    
-    def _is_exempt_user(self, member: discord.Member) -> bool:
-        """
-        Check if a user is exempt from rate limiting.
-        
-        Args:
-            member: Discord member object
-            
-        Returns:
-            True if user is exempt (admin/mod), False otherwise
-        """
-        if not member:
-            return False
-            
-        # Check for administrator permission
-        if member.guild_permissions.administrator:
-            return True
-        
-        # Check for manage_guild permission (typically mods)
-        if member.guild_permissions.manage_guild:
-            return True
-            
-        # Check for manage_channels permission
-        if member.guild_permissions.manage_channels:
-            return True
-            
-        return False
-    
-    def get_user_stats(self, user_id: int) -> Dict[str, any]:
-        """
-        Get rate limit stats for a user.
-        
-        Args:
-            user_id: Discord user ID
-            
-        Returns:
-            Dictionary with user's rate limit statistics
-        """
-        current_time = time.time()
-        user_timestamps = self._user_timestamps[user_id]
-        
-        # Remove old timestamps
-        window_start = current_time - config.rate_limit_window
-        while user_timestamps and user_timestamps[0] < window_start:
-            user_timestamps.popleft()
-        
-        return {
-            'commands_used': len(user_timestamps),
-            'max_commands': config.rate_limit_max_commands,
-            'window_seconds': config.rate_limit_window,
-            'is_limited': len(user_timestamps) >= config.rate_limit_max_commands,
-            'reset_time': user_timestamps[0] + config.rate_limit_window if user_timestamps else current_time
-        }
 
 
 # Global rate limiter instance
@@ -172,10 +105,9 @@ def rate_limit():
         @wraps(func)
         async def wrapper(self, ctx: commands.Context, *args, **kwargs):
             user_id = ctx.author.id
-            member = ctx.author if isinstance(ctx.author, discord.Member) else None
             
             # Check if user is rate limited
-            is_limited, time_until_reset = rate_limiter.is_rate_limited(user_id, member)
+            is_limited, time_until_reset = rate_limiter.is_rate_limited(user_id)
             
             if is_limited:
                 # Only send rate limit message if we haven't sent one recently
@@ -184,15 +116,15 @@ def rate_limit():
                         "⏰ Rate Limited",
                         ERR_RATE_LIMITED.format(
                             time_left=f"{time_until_reset:.1f}",
-                            max_commands=config.rate_limit_max_commands,
-                            window=config.rate_limit_window
+                            max_commands=RATE_LIMIT_MAX_COMMANDS,
+                            window=RATE_LIMIT_WINDOW
                         )
                     )
                     await ctx.send(embed=embed, delete_after=10)
                 return
             
             # Record command usage
-            rate_limiter.add_command_usage(user_id, member)
+            rate_limiter.add_command_usage(user_id)
             
             # Execute the original command
             return await func(self, ctx, *args, **kwargs)
@@ -215,10 +147,9 @@ def rate_limit_app_command():
         @wraps(func)
         async def wrapper(self, interaction: discord.Interaction, *args, **kwargs):
             user_id = interaction.user.id
-            member = interaction.user if isinstance(interaction.user, discord.Member) else None
             
             # Check if user is rate limited
-            is_limited, time_until_reset = rate_limiter.is_rate_limited(user_id, member)
+            is_limited, time_until_reset = rate_limiter.is_rate_limited(user_id)
             
             if is_limited:
                 # Only send rate limit message if we haven't sent one recently
@@ -227,8 +158,8 @@ def rate_limit_app_command():
                         "⏰ Rate Limited",
                         ERR_RATE_LIMITED.format(
                             time_left=f"{time_until_reset:.1f}",
-                            max_commands=config.rate_limit_max_commands,
-                            window=config.rate_limit_window
+                            max_commands=RATE_LIMIT_MAX_COMMANDS,
+                            window=RATE_LIMIT_WINDOW
                         )
                     )
                     await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -239,7 +170,7 @@ def rate_limit_app_command():
                 return
             
             # Record command usage
-            rate_limiter.add_command_usage(user_id, member)
+            rate_limiter.add_command_usage(user_id)
             
             # Execute the original command
             return await func(self, interaction, *args, **kwargs)
