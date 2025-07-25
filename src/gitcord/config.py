@@ -17,6 +17,11 @@ class Config:
         self._token: Optional[str] = None
         self._prefix: str = "!"
         self._activity_name: str = "!hello"
+        
+        # Rate limiting configuration
+        self._rate_limit_max_commands: int = int(os.getenv("RATE_LIMIT_MAX_COMMANDS", "1"))
+        self._rate_limit_window: int = int(os.getenv("RATE_LIMIT_WINDOW", "5"))
+        self._rate_limit_enabled: bool = os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
 
     @property
     def token(self) -> str:
@@ -41,6 +46,26 @@ class Config:
     def activity_name(self, value: str) -> None:
         """Set bot activity name."""
         self._activity_name = value
+
+    @property
+    def rate_limit_max_commands(self) -> int:
+        """Get maximum number of commands allowed per time window."""
+        return self._rate_limit_max_commands
+
+    @property
+    def rate_limit_window(self) -> int:
+        """Get rate limiting time window in seconds."""
+        return self._rate_limit_window
+
+    @property
+    def rate_limit_enabled(self) -> bool:
+        """Get whether rate limiting is enabled."""
+        return self._rate_limit_enabled
+
+    @rate_limit_enabled.setter
+    def rate_limit_enabled(self, value: bool) -> None:
+        """Set whether rate limiting is enabled."""
+        self._rate_limit_enabled = value
 
 
 # Global configuration instance

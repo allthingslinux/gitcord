@@ -9,6 +9,7 @@ from discord.ext import commands
 
 from ..utils.helpers import create_embed
 from ..utils.logger import main_logger as logger
+from ..utils.rate_limiter import rate_limit
 
 
 class Help(commands.Cog):
@@ -19,6 +20,7 @@ class Help(commands.Cog):
         self.bot = bot
         logger.info("Help cog loaded")
 
+    @rate_limit()
     @commands.command(name="help")
     async def help_prefix(self, ctx: commands.Context) -> None:
         """Prefix command to show help information and link to the wiki."""

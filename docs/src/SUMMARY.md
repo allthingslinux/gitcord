@@ -14,6 +14,7 @@
 - [Channel Management](./user-guide/channel-management.md)
 - [Categories](./user-guide/categories.md)
 - [Permissions](./user-guide/permissions.md)
+- [Rate Limiting](./user-guide/rate-limiting.md)
 
 # Developer Guide
 

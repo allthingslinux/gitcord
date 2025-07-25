@@ -1,30 +1,47 @@
 """
-Channel management commands cog for GitCord bot.
-Contains commands for creating and managing channels and categories.
+Channel management cog for GitCord bot.
+Handles creation and management of Discord channels and categories.
 """
 
-from dataclasses import dataclass
-from typing import Optional, Union
-import os
+import asyncio
+import logging
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
-import yaml
 import discord
-from discord import app_commands
+import yaml
 from discord.ext import commands
 
 from .base_cog import BaseCog
-from ..utils.helpers import (
-    create_embed,
-    parse_channel_config,
-    parse_category_config,
-    create_channel_kwargs,
-    create_channel_by_type,
-    check_channel_exists,
-    get_template_path,
+from ..constants.messages import (
+    ERR_DISCORD_API,
+    ERR_FILE_NOT_FOUND,
+    ERR_INVALID_CONFIG,
+    ERR_INVALID_YAML,
+    ERR_PERMISSION_DENIED,
+    ERR_UNEXPECTED,
+    SUCCESS_CATEGORY_CREATED,
+    SUCCESS_CATEGORY_UPDATED,
+    SUCCESS_CHANNEL_CREATED,
 )
-from ..utils import template_metadata
-from ..constants.paths import get_template_repo_dir
-from ..views import DeleteExtraChannelsView
+from ..utils.category_helpers import (
+    apply_template_to_category,
+    category_has_template,
+    get_category_template_name,
+    populate_category_with_channels,
+    set_category_template_metadata,
+)
+from ..utils.helpers import (
+    channel_exists_in_category,
+    check_yaml_config,
+    create_embed,
+    create_error_embed,
+    create_success_embed,
+    load_yaml_file,
+    truncate_text,
+)
+from ..utils.rate_limiter import rate_limit
+from ..views.channel_views import ChannelCreationView, PaginatedChannelView
 
 
 @dataclass
@@ -450,6 +467,7 @@ class Channels(BaseCog):
 
         return embed
 
+    @rate_limit()
     @commands.command(name="createchannel")
     @commands.has_permissions(manage_channels=True)
     async def createchannel(self, ctx: commands.Context) -> None:
@@ -469,6 +487,7 @@ class Channels(BaseCog):
             return
         await self._create_single_channel(ctx, yaml_path)
 
+    @rate_limit()
     @commands.command(name="createcategory")
     @commands.has_permissions(manage_channels=True)
     async def createcategory(self, ctx: commands.Context) -> None:

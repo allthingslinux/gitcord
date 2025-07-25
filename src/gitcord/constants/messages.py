@@ -12,6 +12,12 @@ ERR_INVALID_CHANNEL_TYPE = (
 )
 ERR_DISCORD_API = "Discord API error: {error}"
 ERR_UNEXPECTED = "An unexpected error occurred: {error}"
+ERR_RATE_LIMITED = (
+    "You're sending commands too quickly! "
+    "Please wait **{time_left}s** before trying again.\n\n"
+    "**Rate Limit:** {max_commands} command(s) per {window} seconds\n"
+    "*Admins and moderators are exempt from rate limiting.*"
+)
 
 # Success messages
 SUCCESS_CATEGORY_CREATED = "Successfully created category: **{name}**"
@@ -32,5 +38,6 @@ HELP_COMMANDS = (
     "• `!ping` - Check bot latency\n"
     "• `!createchannel` - Create a channel from YAML (Manage Channels)\n"
     "• `!createcategory` - Create a category from YAML (Manage Channels)\n"
-    "• `!synccommands` - Sync slash commands (Admin only)"
+    "• `!synccommands` - Sync slash commands (Admin only)\n"
+    "• `!ratelimit` - Manage rate limiting settings (Admin only)"
 )

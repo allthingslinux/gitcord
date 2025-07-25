@@ -9,6 +9,7 @@ from discord.ext import commands
 
 from .base_cog import BaseCog
 from ..utils.helpers import create_embed, format_latency
+from ..utils.rate_limiter import rate_limit, rate_limit_app_command
 
 
 class Utility(BaseCog):
@@ -19,6 +20,7 @@ class Utility(BaseCog):
         super().__init__(bot)
         self.logger.info("Utility cog loaded")
 
+    @rate_limit()
     @commands.command(name="hello")
     async def hello(self, ctx: commands.Context) -> None:
         """Simple hello world command."""
@@ -28,6 +30,7 @@ class Utility(BaseCog):
         )
         await ctx.send(embed=embed)
 
+    @rate_limit()
     @commands.command(name="ping")
     async def ping_prefix(self, ctx: commands.Context) -> None:
         """Check bot latency."""
@@ -39,6 +42,7 @@ class Utility(BaseCog):
         )
         await ctx.send(embed=embed)
 
+    @rate_limit_app_command()
     @app_commands.command(name="slashping", description="Check bot latency (slash)")
     async def slashping(self, interaction: discord.Interaction) -> None:
         """Slash command to check bot latency."""
