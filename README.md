@@ -9,7 +9,7 @@ A Discord bot for GitOps-based Discord server management. Manage your server's c
 
 ## 🚀 Getting Started
 
-### Option 1: Use Pre-Hosted Bot (Recommended)
+### Option 1: Use Pre-Hosted Bot (Recommended) (Not Currently Online)
 
 The easiest way to get started is to invite the pre-hosted GitCord bot to your Discord server:
 
