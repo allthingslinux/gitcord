@@ -12,7 +12,7 @@ If you discover a security vulnerability in GitCord, we strongly encourage respo
 
 ### 🔒 Private Disclosure Process
 
-- Email the core maintainer directly at **evolvewithevan@gmail.com**
+- Email the core maintainer directly at **security@allthingslinux.org**
 - Do **not** open a public issue. This helps us address vulnerabilities before they're exploited.
 - Include:
   - A detailed description of the issue
